@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-26 — EcoAI-Science 0.0.2 纠正历史标签与发布来源
+
+- **Type**: fix / release
+- **What**: 将继承的 DAWN 版本标签归档到 `dawn-history/`，为 EcoAI 重建独立的 `v0.0.2`。版本与锁文件同步为 `0.0.2`，包含中文终端及完整安装应用名称修复；发布前检查源码身份、应用名称、版本、锁文件、标签及附件前缀。打包自测适配当前会话界面，并在 macOS、Windows、Linux runner 上运行实际产物。
+- **Verification**: 本地 90 项相关测试、类型与构建通过；实际 macOS arm64 打包应用七项自测通过。视觉基线仅更新状态栏版本号；发布 runner 与线上附件核验结果另行记录。
+- **Impact**: 本次经用户明确授权，推送正确 main/标签，替换错误 DAWN 发布；不操作用户正在运行的安装版和共享预览。
+
 ### 2026-10-26 — 安装后的应用名称统一为 EcoAI-Science
 
 - **Type**: fix

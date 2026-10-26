@@ -5,8 +5,8 @@
  * 四个原生模块各碰一次：better-sqlite3（开库）、pi 链路（发一句收假回复）、node-pty（开终端）、zeromq（列内核）。
  * 只验当前平台；mac 上跑绿只说明 mac 的包能用。
  */
-import { _electron } from "@playwright/test"
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readdirSync } from "node:fs"
+import { _electron, expect } from "@playwright/test"
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync, realpathSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import { startMockInferenceServer, mockModelsJson, CANNED_REPLY } from "./mock-inference-server.mjs"
@@ -27,7 +27,10 @@ function 找可执行() {
     return 指定
   }
   const 候选 = {
-    darwin: [join(ROOT, "release", "mac-arm64", `${NAME}.app`, "Contents", "MacOS", NAME), join(ROOT, "release", "mac", `${NAME}.app`, "Contents", "MacOS", NAME)],
+    darwin: [
+      join(ROOT, "release", process.arch === 'arm64' ? 'mac-arm64' : 'mac', `${NAME}.app`, 'Contents', 'MacOS', NAME),
+      join(ROOT, "release", `mac-${process.arch}`, `${NAME}.app`, 'Contents', 'MacOS', NAME),
+    ],
     // electron-builder 的目录名带架构后缀：本机架构那份叫 `linux-unpacked`，另一种叫 `linux-<arch>-unpacked`
     // （与 mac 那行同一个形状）。只列前者的话，在 arm64 上打的包**自测根本找不到它**，
     // 于是「这个平台的包能不能用」永远没人验——2026-09-05 在容器里验 arm64 时撞到的。
@@ -93,14 +96,32 @@ const 查 = async (名, fn) => {
 }
 try {
   const page = await app.firstWindow()
-  await page.addInitScript(() => { try { localStorage.setItem("dawn.global.lang", "zh") } catch {} })
+  await page.addInitScript(() => {
+    localStorage.setItem("dawn.global.lang", "zh")
+    localStorage.setItem("dawn.global.setupSkipped", "1")
+  })
   await page.reload()
   await 查("窗口起来、数据库开了（better-sqlite3）", () => page.locator(".app-shell").waitFor({ timeout: 60_000 }))
+  await 查("打包身份、完整名称、版本与隔离配置正确", async () => {
+    const identity = await app.evaluate(({ app }) => ({ name: app.getName(), version: app.getVersion(), packaged: app.isPackaged, userData: app.getPath('userData') }))
+    const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
+    expect(identity).toMatchObject({ name: NAME, version: pkg.version, packaged: true })
+    expect(realpathSync(identity.userData)).toBe(realpathSync(join(dir, 'electron-user-data')))
+    await expect(page.locator('.brand-name')).toHaveText(NAME)
+    console.log(`    ${identity.name} ${identity.version} ${process.platform}/${process.arch}`)
+  })
   await 查("自带技能与子 agent 从磁盘读到了（/ 菜单有条目）", async () => {
-    await page.evaluate(async () => { const p = await window.dawn.invoke("getProviders", {}); await window.dawn.invoke("createTask", { agentId: p.data.agents[0].agentId }) })
+    await page.evaluate(async workspace => {
+      const p = await window.dawn.invoke("getProviders", {})
+      const result = await window.dawn.invoke("createTask", { agentId: p.data.agents[0].agentId, workspace })
+      if (!result.ok) throw new Error(result.error.message)
+    }, workspace)
     await page.reload()
-    await page.locator(".session-list .sess-item .row").first().click()
-    const box = page.getByPlaceholder(/今天帮你做些什么/)
+    const project = page.locator('.proj-list .proj-item').first()
+    await expect(project.locator('.row').first()).toBeVisible()
+    if (await project.locator('.proj-session-list').count() === 0) await project.locator('.row').first().click()
+    await project.locator('.proj-session-list .sess-item .row').first().click()
+    const box = page.locator('.main .composer-card textarea.composer-field:visible')
     await box.waitFor({ timeout: 30_000 })
     await box.fill("/")
     await page.locator('.slash-menu [role="option"]').first().waitFor({ timeout: 10_000 })
@@ -109,22 +130,27 @@ try {
     await box.fill("")
   })
   await 查("发一句收到假回复（pi 链路 + 子进程）", async () => {
-    const box = page.getByPlaceholder(/今天帮你做些什么/)
+    const box = page.locator('.main .composer-card textarea.composer-field:visible')
     await box.fill("打包冒烟"); await box.press("Enter")
-    await page.locator(".turns .turn.agent").last().waitFor({ timeout: 60_000 })
-    const t = await page.locator(".turns .turn.agent").last().textContent()
-    if (!t.includes(CANNED_REPLY)) throw new Error(`回复不对：${t}`)
+    await expect(page.locator(".turns .turn.agent").last()).toContainText(CANNED_REPLY, { timeout: 60_000 })
   })
   await 查("终端起得来（node-pty spawn-helper）", async () => {
-    await page.getByRole("button", { name: "终端", exact: true }).click()
+    await page.locator('.composer-card .attach-trigger').click()
+    await page.getByRole('menuitem', { name: '终端面板', exact: true }).click()
     const host = page.locator(".dock .term-host")
     await host.waitFor({ timeout: 60_000 })
     // 光有格子不算：敲一句、等回显，才证明 spawn-helper 真把 shell 起起来了
     await host.locator(".xterm-helper-textarea").first().waitFor({ state: "attached", timeout: 30_000 }) // xterm 的辅助输入框本来就是隐藏的，等「可见」永远等不到
-    await page.waitForTimeout(1500)
+    await expect(host.locator('.xterm-screen')).toContainText(/[$#%>]/)
     await host.locator(".xterm-helper-textarea").first().focus()
-    await page.keyboard.type("echo DAWN_PTY_OK\n")
-    await page.locator(".dock .term-host").getByText(/DAWN_PTY_OK/).first().waitFor({ timeout: 30_000 })
+    const command = process.platform === 'win32'
+      ? "Set-Content -LiteralPath ecoai-packaged-pty.txt -Value ECOAI_PTY_OK"
+      : "printf '%s' ECOAI_PTY_OK > ecoai-packaged-pty.txt"
+    await page.keyboard.type(command)
+    await page.keyboard.press('Enter')
+    await expect.poll(() => {
+      try { return readFileSync(join(workspace, 'ecoai-packaged-pty.txt'), 'utf8').trim() } catch { return '' }
+    }, { timeout: 30_000 }).toBe('ECOAI_PTY_OK')
   })
   await 查("探测本机解释器不炸（首启向导用；走登录 shell 的 which）", async () => {
     const r = await page.evaluate(async () => (await window.dawn.invoke("probeInterpreters", {})).data)
@@ -132,9 +158,9 @@ try {
     console.log(`    python 候选 ${r.python.length} 条，R 候选 ${r.r.length} 条`)
   })
   await 查("设置 → 内核 列得出来（zeromq / kernelspec 扫描不炸）", async () => {
-    await page.getByRole("button", { name: "设置", exact: true }).click()
-    await page.locator(".settings-nav").getByRole("button", { name: "内核", exact: true }).click()
-    await page.getByRole("textbox", { name: "Python 解释器" }).waitFor({ timeout: 15_000 })
+    const result = await page.evaluate(() => window.dawn.invoke('listKernels', {}))
+    expect(result.ok, JSON.stringify(result)).toBe(true)
+    expect(Array.isArray(result.data.kernels)).toBe(true)
   })
   await page.screenshot({ path: join(dir, "packaged.png") })
   console.log(`[packaged] 截图：${join(dir, "packaged.png")}`)

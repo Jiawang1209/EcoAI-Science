@@ -33,7 +33,7 @@ if (脏.length) {
 
 const tag = `v${版本}`
 if (sh("git", ["tag", "--list", tag])) {
-  console.error(`tag ${tag} 已经有了。要重发同一个版本，先 git tag -d ${tag}（远端那个要你自己删）`)
+  console.error(`tag ${tag} 已存在，指向 ${sh("git", ["log", "-1", "--format=%h %s", tag])}。请先核对是否为 DAWN 历史标签，不要直接推送旧标签；归档与重建标签需单独确认。`)
   process.exit(1)
 }
 
@@ -50,12 +50,19 @@ if (旧 === 版本) {
     process.exit(1)
   }
   writeFileSync(p, 新文)
-  sh("git", ["add", "package.json"])
+  const lockPath = resolve(ROOT, "package-lock.json")
+  const lock = JSON.parse(readFileSync(lockPath, "utf8"))
+  lock.version = 版本
+  lock.packages[""].version = 版本
+  writeFileSync(lockPath, JSON.stringify(lock, null, 2) + "\n")
+  sh(process.execPath, [resolve(ROOT, "scripts/verify-release.mjs")])
+  sh("git", ["add", "package.json", "package-lock.json"])
   sh("git", ["commit", "-m", `chore(release): ${版本}`])
   console.log(`package.json ${旧} → ${版本}，已提交`)
 }
 
-sh("git", ["tag", "-a", tag, "-m", `EcoAI ${版本}`])
+sh(process.execPath, [resolve(ROOT, "scripts/verify-release.mjs")])
+sh("git", ["tag", "-a", tag, "-m", `EcoAI-Science ${版本}`])
 console.log(`已打 tag ${tag}（指向 ${sh("git", ["rev-parse", "--short", "HEAD"])}）
 
 **还没推。** 推了才会触发打包与发 Release：

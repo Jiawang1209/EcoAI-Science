@@ -1,9 +1,9 @@
 # 三平台四份打包矩阵（打包 spec §8）。
-# 触发：打 tag `v*` 自动打包并发 GitHub Release（草稿，人看一眼再点「发布」）；手动触发只出 artifacts 不发。
+# 触发：打 tag `v*` 自动打包并发正式 GitHub Release；手动触发只出 artifacts 不发。
 # 不签名（作者定的：先不花那 99 美元，用户右键打开）；有证书时在 electron-builder.yml 删 identity: null 并设 CSC_* secrets。
 # Linux 两种架构各在各自的 runner 上打——node-pty 没有 linux 预编译件，只能现场编本机那一种。
 #
-# **这条工作流不跑测试**（2026-09-05 拆的）。测试在 `ci.yml`，红了归它红。
+# 完整测试在 `ci.yml`。本工作流在打包后仅运行产物自测，确认名称、版本及原生模块可用。
 # 理由是踩出来的：测试与打包同在一个 job 时，Linux 那两台在测试步骤超时，
 # `release` 的 `needs: package` 于是永不满足——**mac 与 Windows 明明打成功了，产物却只留在
 # artifacts 里七天后自动删除，Release 一个都没出过**。验不该有权否决发。
@@ -29,7 +29,7 @@ jobs:
         with: { node-version: 22, cache: npm }
       - name: Linux 打包机依赖（node-pty 现场编译 + AppImage 工具）
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y build-essential python3 libfuse2
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3 libfuse2 xvfb libgtk-3-0 libnss3 libgbm1 libasound2
       - run: npm ci
       # 打包前只做这一道静态检查：它几秒钟，且能挡住「构建产物根本编译不过」这类事。
       # 完整测试在 ci.yml，不在这里——见文件头。
@@ -37,19 +37,16 @@ jobs:
       # **tag 与 package.json 的版本必须一致**：不一致时打出来的文件名是旧版本号
       # （`DAWN-Science-<version>-…`），而 Release 的标题是 tag——发出去的包与它的名字对不上，
       # 装到用户机器上「关于」里显示的还是旧版本。宁可在这里红，也不要发一套名字撒谎的包。
-      - name: tag 与 package.json 的版本要对得上
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: bash
-        run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          PKG="$(node -p "require('./package.json').version")"
-          if [ "$TAG" != "$PKG" ]; then
-            echo "::error::tag 是 v$TAG，而 package.json 里是 $PKG。先改 package.json 的 version 再打 tag。"
-            exit 1
-          fi
-          echo "版本一致：$PKG"
+      - name: 核对 EcoAI 品牌、版本、锁文件和标签
+        run: node scripts/verify-release.mjs
       - run: npm run build
       - run: ${{ matrix.cmd }}
+      - name: 运行打包后的应用自测（macOS / Windows）
+        if: runner.os != 'Linux'
+        run: npm run test:packaged
+      - name: 运行打包后的应用自测（Linux）
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum npm run test:packaged
       - uses: actions/upload-artifact@v4
         with:
           name: ecoai-science-${{ matrix.name }}
@@ -79,6 +76,12 @@ jobs:
         shell: bash
         run: |
           ls -lh artifacts || true
+          for asset in artifacts/*; do
+            if [[ "$(basename "$asset")" != EcoAI-Science-${GITHUB_REF_NAME#v}-* ]]; then
+              echo "::error::拒绝发布品牌或版本不符的附件：$asset"
+              exit 1
+            fi
+          done
           missing=""
           check() {
             if ! compgen -G "artifacts/$1" > /dev/null; then missing="$missing $2"; fi
