@@ -16,27 +16,27 @@ describe("product branding preserves user data", () => {
     }
   }
 
-  it("keeps the legacy encryption identity until Electron is ready, then displays EcoAI", () => {
+  it("keeps the legacy encryption identity until Electron is ready, then displays EcoAI-Science", () => {
     const app = application(true, "/profiles/EcoAI")
     const reveal = applyProductIdentity(app)
     expect(app.name()).toBe("DAWN Science")
     expect(reveal).toBeTypeOf("function")
     reveal()
-    expect(app.name()).toBe("EcoAI")
+    expect(app.name()).toBe("EcoAI-Science")
     expect(app.getPath("userData")).toBe(join("/profiles", "DAWN Science"))
   })
 
   it("keeps the existing packaged data directory when the installed product is renamed", () => {
     const app = application(true, "/profiles/EcoAI")
     applyProductIdentity(app)()
-    expect(app.name()).toBe("EcoAI")
+    expect(app.name()).toBe("EcoAI-Science")
     expect(app.getPath("userData")).toBe(join("/profiles", "DAWN Science"))
   })
 
   it("keeps a packaged test's explicit user-data-dir instead of opening a real profile", () => {
     const app = application(true, "/isolated/packaged-test", true)
     applyProductIdentity(app)()
-    expect(app.name()).toBe("EcoAI")
+    expect(app.name()).toBe("EcoAI-Science")
     expect(app.getPath("userData")).toBe("/isolated/packaged-test")
   })
 
@@ -45,7 +45,7 @@ describe("product branding preserves user data", () => {
     const reveal = applyProductIdentity(app)
     expect(app.name()).toBe("Electron")
     reveal()
-    expect(app.name()).toBe("EcoAI")
+    expect(app.name()).toBe("EcoAI-Science")
     expect(app.getPath("userData")).toBe(profile)
   })
 })

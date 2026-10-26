@@ -18,7 +18,7 @@ export function applyProductIdentity(app: ApplicationIdentity): () => void {
   if (app.isPackaged) app.setName("DAWN Science")
   app.setPath("userData", existingUserData)
   return () => {
-    app.setName("EcoAI")
+    app.setName("EcoAI-Science")
     app.setPath("userData", existingUserData)
   }
 }

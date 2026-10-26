@@ -6,7 +6,7 @@ test("EcoAI-Science与折叠、快捷键按钮始终单行，展开侧栏加宽�
   const { page, app, dir } = dawn
   await expect(page).toHaveTitle("EcoAI")
   await expect(page.locator(".topbar .brand-name")).toHaveText("EcoAI-Science")
-  expect(await app.evaluate(({ app }) => app.getName())).toBe("EcoAI")
+  expect(await app.evaluate(({ app }) => app.getName())).toBe("EcoAI-Science")
   expect(realpathSync(await app.evaluate(({ app }) => app.getPath("userData")))).toBe(realpathSync(join(dir, "electron-user-data")))
   await page.screenshot({ animations: "disabled", path: info.outputPath("ecoai-home.png") })
   await 开一段临时会话(page, "校正500米8月数据偏差")

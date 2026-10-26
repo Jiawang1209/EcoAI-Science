@@ -17,6 +17,12 @@ import { parse } from "yaml"
 const config = parse(readFileSync(join(__dirname, "..", "electron-builder.yml"), "utf8"))
 
 describe("electron-builder.yml", () => {
+  it("安装后的应用与磁盘映像均使用完整名称 EcoAI-Science", () => {
+    expect(config.productName).toBe("EcoAI-Science")
+    expect(config.executableName).toBe("EcoAI-Science")
+    expect(config.dmg.title).toBe("EcoAI-Science")
+  })
+
   it("mac 包 ad-hoc 签名，而不是完全不签（不签的包在 Apple Silicon 上报「已损坏」）", () => {
     expect(config.mac.identity).not.toBeNull()
     expect(config.mac.identity).toBeDefined()

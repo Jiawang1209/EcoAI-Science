@@ -253,12 +253,12 @@ function 创建托盘(): void {
   const 图 = nativeImage.createFromDataURL(托盘图标).resize({ width: process.platform === "darwin" ? 18 : 32, height: process.platform === "darwin" ? 18 : 32 })
   if (process.platform === "darwin") 图.setTemplateImage(true)
   托盘 = new Tray(图)
-  托盘.setToolTip("EcoAI")
+  托盘.setToolTip("EcoAI-Science")
   const 菜单 = Menu.buildFromTemplate([
     { label: "显示主窗口", click: () => { 显示主窗口() } },
     { label: "新建会话", click: () => { 显示主窗口()?.webContents.send("dawn:tray-new-task") } },
     { type: "separator" },
-    { label: "退出 EcoAI", click: () => app.quit() },
+    { label: "退出 EcoAI-Science", click: () => app.quit() },
   ])
   托盘.on("right-click", () => 托盘?.popUpContextMenu(菜单))
   托盘.on("click", () => {

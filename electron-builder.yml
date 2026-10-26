@@ -1,8 +1,8 @@
 # 打包配置（2026-08-27，spec `docs/superpowers/specs/2026-08-27-打包-design.md`）。
 # 三条定下的：v1 不用 asar（§2）、不签名（有证书时删 identity: null 并设 CSC_LINK）、各平台在各自机器上打。
 appId: science.dawn.app
-productName: EcoAI
-executableName: EcoAI
+productName: EcoAI-Science
+executableName: EcoAI-Science
 artifactName: EcoAI-Science-${version}-${os}-${arch}.${ext}
 directories:
   output: release
@@ -38,7 +38,7 @@ mac:
   # entitlements 里有 disable-library-validation（已有）。有 Developer ID 时：改成证书名，设 CSC_LINK / CSC_KEY_PASSWORD，再加 notarize
   identity: "-"
 dmg:
-  title: EcoAI
+  title: EcoAI-Science
   contents:
     - { x: 160, y: 170, type: file }
     - { x: 400, y: 170, type: link, path: /Applications }

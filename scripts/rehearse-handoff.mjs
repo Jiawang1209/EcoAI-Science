@@ -23,7 +23,7 @@ const ROOT = resolve(import.meta.dirname, "..")
 const key = ((readFileSync(join(ROOT, ".env"), "utf8").match(/^DEEPSEEK_API_KEY=(.+)$/m) ?? [])[1] ?? "").trim()
 if (!key) { console.error("需要 .env 里的 DEEPSEEK_API_KEY（真链路）"); process.exit(2) }
 
-const EXE = join(ROOT, "release/mac-arm64/EcoAI.app/Contents/MacOS/EcoAI")
+const EXE = join(ROOT, "release/mac-arm64/EcoAI-Science.app/Contents/MacOS/EcoAI-Science")
 if (!existsSync(EXE)) { console.error(`没有打包产物：${EXE}\n先跑 npm run pack`); process.exit(2) }
 
 const tmp = mkdtempSync(join(tmpdir(), "dawn-handoff-"))

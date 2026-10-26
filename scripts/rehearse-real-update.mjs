@@ -42,7 +42,8 @@ const ud = join(tmp, "ud"); mkdirSync(ud)
 
 console.log(`① 把 ${旧版} 装进 ${APPS}`)
 execFileSync("/usr/bin/ditto", ["-x", "-k", 旧包, APPS])
-const APP = join(APPS, "EcoAI.app")
+// Accept both the first release and the full product name; updates retain the installed path.
+const APP = join(APPS, existsSync(join(APPS, "EcoAI-Science.app")) ? "EcoAI-Science.app" : "EcoAI.app")
 const 包内版本 = (app) => JSON.parse(readFileSync(join(app, "Contents/Resources/app/package.json"), "utf8")).version
 判(`装上的是 ${旧版}`, 包内版本(APP) === 旧版, 包内版本(APP))
 
@@ -55,7 +56,7 @@ const 起 = async () => {
   for (const k of Object.keys(env)) if (k.startsWith("DAWN_") || k.endsWith("_API_KEY")) delete env[k]
   Object.assign(env, { DAWN_HIDE_WINDOW: "1", DAWN_UPDATE_FEED: feed.url, DAWN_NO_EXTERNAL: "1" })
   const app = await _electron.launch({
-    executablePath: join(APP, "Contents/MacOS/EcoAI"),
+    executablePath: join(APP, "Contents/MacOS", execFileSync("/usr/libexec/PlistBuddy", ["-c", "Print :CFBundleExecutable", join(APP, "Contents/Info.plist")], { encoding: "utf8" }).trim()),
     args: [`--user-data-dir=${ud}`],
     env,
   })
@@ -122,7 +123,7 @@ console.log("③ 盘上到底换了没有")
 判(`旧的备份还在（.old-${旧版}）`, existsSync(`${APP}.old-${旧版}`), readdirSync(APPS).join("、"))
 
 // 换包之后系统会把新版拉起来（app.relaunch）。它可能还活着，先收干净再自己起一次
-try { execFileSync("/usr/bin/pkill", ["-f", `${APPS}/EcoAI.app`]) } catch { /* 没在跑 */ }
+try { execFileSync("/usr/bin/pkill", ["-f", APP]) } catch { /* 没在跑 */ }
 await new Promise((r) => setTimeout(r, 2000))
 
 console.log(`④ 起换上去的 ${新版}——key 应该还在`)

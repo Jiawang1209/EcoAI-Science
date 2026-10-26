@@ -12,7 +12,7 @@ import { join, resolve } from "node:path"
 import { startMockInferenceServer, mockModelsJson, CANNED_REPLY } from "./mock-inference-server.mjs"
 
 const ROOT = resolve(import.meta.dirname, "..")
-const NAME = "EcoAI"
+const NAME = "EcoAI-Science"
 function 找可执行() {
   // **验的应该是发出去的那一份**：`DAWN_PACKAGED_BIN` 指到任意一份解开的产物上
   // （比如从 Release 下回来的 dmg 里的 `…/Contents/MacOS/DAWN Science`），

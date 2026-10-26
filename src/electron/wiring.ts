@@ -1276,7 +1276,7 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
         ...(opts.更新.应用路径
           ? { appPath: opts.更新.应用路径 }
           : 假装换包
-            ? { appPath: join(opts.更新.下载目录, "EcoAI.app") }
+            ? { appPath: join(opts.更新.下载目录, "EcoAI-Science.app") }
             : {}),
         可写: (路径) => {
           try {

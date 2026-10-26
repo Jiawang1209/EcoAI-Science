@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-26 — 安装后的应用名称统一为 EcoAI-Science
+
+- **Type**: fix
+- **What**: 修正打包配置中仍为 `EcoAI` 的 productName、executableName 和 DMG 标题，安装后的 macOS 应用为 `EcoAI-Science.app`；Electron 系统名称、托盘和打包验证脚本同步使用完整名称。保留原有应用标识、数据目录及凭证加密身份，更新演练兼容旧包名称。
+- **Verification**: 70 项打包/身份/更新测试及 5 项品牌/托盘/更新 Electron 用例通过；类型、完整构建通过；实际生成 macOS arm64 应用并通过深度签名校验，在隔离配置下启动确认应用名称及 userData。见 docs/reviews/2026-10-26-ecoai-app-name-verification.md。
+- **Impact**: 本地 `main` 提交，未推送或改动已发布附件，版本号仍为 `0.0.1`。Windows/Linux 使用统一名称配置，本次未进行这两个平台的实际打包。
+
 ### 2026-10-26 — 修复终端缺省编码导致中文乱码及 Agent 模式误拦截
 
 - **Type**: fix
