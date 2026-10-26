@@ -15,6 +15,7 @@ import type {
   SessionSpec,
 } from "./types.js"
 import { materializeSessionDir } from "./session-dir.js"
+import { ptyEnvironment } from "./pty-environment.js"
 import type { TerminalControl } from "../terminal/control.js"
 
 interface ProcRow {
@@ -115,7 +116,7 @@ export class PtyRuntime implements AgentRuntime {
       cols: this.opts.cols ?? 100,
       rows: this.opts.rows ?? 30,
       cwd: spec.workspace,
-      env: { ...process.env, ...extraEnv, ...environment } as Record<string, string>,
+      env: ptyEnvironment({ ...process.env, ...extraEnv, ...environment }) as Record<string, string>,
     })
 
     this.procs.set(spec.sessionId, proc)

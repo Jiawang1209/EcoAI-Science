@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-26 — 修复终端缺省编码导致中文乱码及 Agent 模式误拦截
+
+- **Type**: fix
+- **What**: 复现 macOS 无 locale 的真实 zsh 中文路径/输入乱码，以及 Unicode 右提示符引发光标位置异常、空闲 Shell 无法进入 EcoAI 模式。为所有字符 locale 缺失或为空的 Unix PTY 补充 UTF-8 默认值，保留用户显式 locale、数值等分类及 Windows 行为，不放宽终端启动守卫。
+- **Verification**: 修复前 4 个真实 PTY 用例及两项 Electron 复现分别失败；修复后 59 项相关测试、类型与完整构建通过，12 项 Electron 回归通过。用户验收后本地 `main` 最终复核：59 项相关测试、类型与完整构建、13 项 Electron 用例全部通过，覆盖中文问答、文件内容、窄窗和版本显示。见 docs/reviews/2026-10-26-ecoai-terminal-utf8-verification.md。
+- **Impact**: 按用户验收确认整理入本地 `main`，远端提交由用户自行推送；保留现有版本号与标签，已发布 0.0.1 程序包不包含修复。没有操作用户正在使用的共享预览终端或替换安装版。
+
 ### 2026-10-26 — EcoAI 0.0.1 三平台发布验收与截图同步
 
 - **Type**: release / docs / test
