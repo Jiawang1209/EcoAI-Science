@@ -1,0 +1,62 @@
+[
+  {
+    "name": "EcoAI-Science-0.0.2-linux-amd64.deb",
+    "size": 186163540,
+    "sha256": "5444c74c93d2625bee027e20f0ab8867f93812132bfb978b5e17604faef1959a",
+    "verified": true
+  },
+  {
+    "name": "EcoAI-Science-0.0.2-linux-arm64.AppImage",
+    "size": 238277363,
+    "sha256": "755f23b2a0088b68d37d372cb5c7f743e234f209fa5fa407c9430567ea6aa90a",
+    "verified": true
+  },
+  {
+    "name": "EcoAI-Science-0.0.2-linux-arm64.deb",
+    "size": 176179180,
+    "sha256": "ad9aa499cc5581889fcf6570bc166a785b88b7f1030e5829e36a3eaaac1e1e61",
+    "verified": true
+  },
+  {
+    "name": "EcoAI-Science-0.0.2-linux-x86_64.AppImage",
+    "size": 241637874,
+    "sha256": "bdfc35d16c30e5843ffb89fdd89620f9a8e2476ad0aee0c6ba774f13cf7fc89c",
+    "verified": true
+  },
+  {
+    "name": "EcoAI-Science-0.0.2-mac-arm64.dmg",
+    "size": 241292907,
+    "sha256": "410c6f8fe729b139ed7c98cf49eaf34aaae2928ed627db98846cfde840c7b2de",
+    "verified": true
+  },
+  {
+    "name": "EcoAI-Science-0.0.2-mac-arm64.zip",
+    "size": 254688138,
+    "sha256": "950515230dee48e7202b30ddee7ba89e3e67274e1d3113e59f50610c001f3b20",
+    "verified": true
+  },
+  {
+    "name": "EcoAI-Science-0.0.2-mac-x64.dmg",
+    "size": 245059791,
+    "sha256": "fe1505a374747e9c0b10de0ab675e6ce0fc3ea23e0ecce91232d1da5785cf015",
+    "verified": true
+  },
+  {
+    "name": "EcoAI-Science-0.0.2-mac-x64.zip",
+    "size": 258529359,
+    "sha256": "18dcb45e858223febf6c3f2d493230d280cc24670f4e861065528ac2925970b4",
+    "verified": true
+  },
+  {
+    "name": "EcoAI-Science-0.0.2-win-x64-portable.exe",
+    "size": 204008473,
+    "sha256": "ab4dbcb090854ed167c57367882a07ca8435bfbb6a87fd493fc7d41a63302762",
+    "verified": true
+  },
+  {
+    "name": "EcoAI-Science-0.0.2-win-x64.exe",
+    "size": 204280744,
+    "sha256": "35c64f693a0c2fcb4eea143acecc452c895a64d7ba7d2b75136ce40a3b99fc25",
+    "verified": true
+  }
+]

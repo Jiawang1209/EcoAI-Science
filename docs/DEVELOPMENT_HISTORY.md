@@ -12,7 +12,7 @@
 
 - **Type**: fix / release
 - **What**: 将继承的 DAWN 版本标签归档到 `dawn-history/`，为 EcoAI 重建独立的 `v0.0.2`。版本与锁文件同步为 `0.0.2`，包含中文终端及完整安装应用名称修复；发布前检查源码身份、应用名称、版本、锁文件、标签及附件前缀。打包自测适配当前会话界面，并在 macOS、Windows、Linux runner 上运行实际产物。
-- **Verification**: 本地 90 项相关测试、类型与构建通过；实际 macOS arm64 打包应用七项自测通过。视觉基线仅更新状态栏版本号；发布 runner 与线上附件核验结果另行记录。
+- **Verification**: 本地 90 项相关测试、类型与构建、14 张视觉基线及中文终端等三个 Electron 用例通过。发布四个构建任务及 release 任务全部成功，各平台真实打包应用七项自测通过。线上 10 个附件全部下载并核对大小/SHA-256；下载的 ARM64 DMG 与 Intel ZIP（Rosetta）再次运行七项自测通过。见 docs/reviews/2026-10-26-ecoai-0.0.2-release-verification.md。
 - **Impact**: 本次经用户明确授权，推送正确 main/标签，替换错误 DAWN 发布；不操作用户正在运行的安装版和共享预览。
 
 ### 2026-10-26 — 安装后的应用名称统一为 EcoAI-Science
