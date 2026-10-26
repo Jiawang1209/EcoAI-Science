@@ -10,7 +10,7 @@
 
 Connect research questions, data, R / Python, literature, and analysis outputs in one workspace.
 
-[Downloads](https://github.com/Jiawang1209/EcoAI-Science/releases) · [Run from source](#run-from-source) · [Documentation](#documentation) · [DAWN-Science](https://github.com/Jiawang1209/DAWN-Science)
+[Download v0.0.1](https://github.com/Jiawang1209/EcoAI-Science/releases/tag/v0.0.1) · [Run from source](#run-from-source) · [Documentation](#documentation) · [DAWN-Science](https://github.com/Jiawang1209/DAWN-Science)
 
 </div>
 

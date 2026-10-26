@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-26 — EcoAI 0.0.1 三平台发布验收与截图同步
+
+- **Type**: release / docs / test
+- **What**: 首版已正式发布到 EcoAI-Science Releases；macOS 4 个、Windows 2 个、Linux 4 个程序包齐全。补充发布记录和下载入口，README 首页截图与 14 张视觉基线同步为 v0.0.1。
+- **Verification**: 四个打包任务和 release 任务全部成功；10 个附件状态 uploaded，下载 HEAD 均 200 且长度与资产一致。本地完整视觉复验 14/14 通过；暗色空态首次重存有阴影采集差异，按既有规则使用稳定帧后复验。全部基线与旧版差异只位于版本文字。详见 docs/reviews/2026-10-26-ecoai-0.0.1-release.md。
+- **Impact**: 此后续提交只更新文档、截图和基线；已发布 v0.0.1 仍指向源码 3980dc4a，不重写标签。未把打包发布成功等同于三平台真机安装运行验收。
+
 ### 2026-10-26 — EcoAI-Science 首版 0.0.1
 
 - **Type**: release

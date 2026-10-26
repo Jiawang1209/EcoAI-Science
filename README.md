@@ -10,7 +10,7 @@
 
 把研究问题、数据、R / Python、文献与分析结果连接在同一个工作空间。
 
-[下载安装](https://github.com/Jiawang1209/EcoAI-Science/releases) · [从源码运行](#从源码运行) · [使用文档](#使用文档) · [DAWN-Science](https://github.com/Jiawang1209/DAWN-Science)
+[下载 v0.0.1](https://github.com/Jiawang1209/EcoAI-Science/releases/tag/v0.0.1) · [从源码运行](#从源码运行) · [使用文档](#使用文档) · [DAWN-Science](https://github.com/Jiawang1209/DAWN-Science)
 
 </div>
 
