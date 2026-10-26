@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-26 — EcoAI-Science 首版 0.0.1
+
+- **Type**: release
+- **What**: 将 EcoAI 首个独立版本设为 0.0.1，同步 package.json 与 package-lock.json。保留 DAWN 原有历史；本地旧 v0.0.1 标签另存为 dawn-history/v0.0.1，新的 EcoAI v0.0.1 标签指向本次发版提交。推送 main 和指定标签，触发 macOS、Windows、Linux 自动打包及 Releases 发布。
+- **Verification**: 发版前版本文件一致、类型检查与完整构建通过，版本栏/品牌/关于页 4 项真实 Electron 检查通过；远端各平台结果以此次 Actions 和 Release 实际产物为准。
+- **Impact**: 用户已明确授权提交、推送和首次正式发布；不推送历史 DAWN 标签，不替换本机安装版。
+
 ### 2026-10-26 — 将品牌、Logo 与双语 README 落地到实际主目录
 
 - **Type**: fix / integration
