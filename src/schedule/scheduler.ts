@@ -54,7 +54,7 @@ export class Scheduler {
   启动时收拾(): void {
     const now = this.deps.now()
     for (const r of this.deps.store.unfinished()) {
-      this.deps.store.putRun({ ...r, status: "failed", finishedAt: now, error: { code: "host_interrupted", message: "DAWN 在这次运行结束前停了" } })
+      this.deps.store.putRun({ ...r, status: "failed", finishedAt: now, error: { code: "host_interrupted", message: "EcoAI 在这次运行结束前停了" } })
     }
   }
 
@@ -104,7 +104,7 @@ export class Scheduler {
         ...候选,
         status: "skipped",
         finishedAt: now,
-        error: 重叠 ? { code: "overlap", message: "上一次还在跑，这一次跳过了" } : { code: "misfire", message: `DAWN 回来时已经晚了 ${Math.round(晚了 / 60_000)} 分钟，超过补跑窗口，这一次跳过了` },
+        error: 重叠 ? { code: "overlap", message: "上一次还在跑，这一次跳过了" } : { code: "misfire", message: `EcoAI 回来时已经晚了 ${Math.round(晚了 / 60_000)} 分钟，超过补跑窗口，这一次跳过了` },
       })
       this.deps.store.prune(d.id, this.deps.每条留几条记录)
       this.deps.onChange?.()

@@ -58,7 +58,7 @@ describe("头与路径", () => {
     expect(r.headers["iLink-App-ClientVersion"]).toMatch(/^\d+$/)
     // UIN：base64 的十进制数字串
     expect(Buffer.from(r.headers["X-WECHAT-UIN"]!, "base64").toString()).toMatch(/^\d+$/)
-    expect((r.body as { base_info: { bot_agent: string } }).base_info.bot_agent).toMatch(/^DAWN-Science\//)
+    expect((r.body as { base_info: { bot_agent: string } }).base_info.bot_agent).toMatch(/^EcoAI\//)
   })
 
   it("账号自己的 baseUrl 覆盖默认，但**扫码那两步永远打默认基址**", async () => {

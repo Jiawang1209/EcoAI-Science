@@ -166,11 +166,11 @@ export class TerminalControl {
     const screen = await e.screen.snapshot()
     const program = basename(e.port.process?.() || e.port.command).replace(/^-/, '')
     if (!e.alive || e.inputLength || e.inputUncertain || e.pasting || !['sh', 'bash', 'zsh'].includes(program) || e.operation || e.task?.state === 'running' || !readyPrompt('shell', screen.cursorPrefix, screen.alternate)) {
-      throw new Error('请先回到空闲 Shell 提示符，并按 Ctrl-C 取消未提交的输入，再进入 DAWN 模式')
+      throw new Error('请先回到空闲 Shell 提示符，并按 Ctrl-C 取消未提交的输入，再进入 EcoAI 模式')
     }
     this.reclaim(id)
     if (resumeSessionId && !/^[a-zA-Z0-9-]{1,100}$/.test(resumeSessionId)) throw new Error('无效的历史会话身份')
-    e.port.write(resumeSessionId ? `dawn --resume '${resumeSessionId}'\r` : 'dawn\r')
+    e.port.write(resumeSessionId ? `ecoai --resume '${resumeSessionId}'\r` : 'ecoai\r')
   }
 
   /** Explicit history-picker action probes the idle Shell, using a private marker rather than guessing cwd. */

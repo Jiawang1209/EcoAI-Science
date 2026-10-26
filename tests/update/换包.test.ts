@@ -28,7 +28,7 @@ const 记账 = (over: Partial<换包依赖> = {}) => {
     删: async (p) => {
       账.push(`删 ${p}`)
     },
-    找app: () => "/tmp/staged/DAWN Science.app",
+    找app: () => "/tmp/staged/EcoAI.app",
     读包版本: () => "0.0.3",
     ...over,
   }
@@ -37,18 +37,18 @@ const 记账 = (over: Partial<换包依赖> = {}) => {
 
 const mac参数 = {
   方式: "mac-zip" as const,
-  包路径: "/tmp/dl/DAWN-Science-0.0.3-mac-arm64.zip",
+  包路径: "/tmp/dl/EcoAI-Science-0.0.3-mac-arm64.zip",
   期望版本: "0.0.3",
   当前版本: "0.0.2",
-  应用路径: "/Applications/DAWN Science.app",
+  应用路径: "/Applications/EcoAI.app",
 }
 
 describe("mac：解开 → 核对 → 备份 → 换上", () => {
   it("顺序是备份在前、换上在后", async () => {
     const { 账, 依赖 } = 记账()
     await 换包(mac参数, 依赖)
-    const 备份 = 账.findIndex((l) => l.includes("→ /Applications/DAWN Science.app.old-0.0.2"))
-    const 换上 = 账.findIndex((l) => l.startsWith("改名 /tmp/staged/DAWN Science.app →"))
+    const 备份 = 账.findIndex((l) => l.includes("→ /Applications/EcoAI.app.old-0.0.2"))
+    const 换上 = 账.findIndex((l) => l.startsWith("改名 /tmp/staged/EcoAI.app →"))
     expect(备份).toBeGreaterThanOrEqual(0)
     expect(换上).toBeGreaterThan(备份)
   })
@@ -75,7 +75,7 @@ describe("mac：解开 → 核对 → 备份 → 换上", () => {
     })
     await expect(换包(mac参数, 依赖)).rejects.toThrow(/磁盘满了/)
     // 最后一步必须是把备份改回原名
-    expect(账.at(-1)).toBe("改名 /Applications/DAWN Science.app.old-0.0.2 → /Applications/DAWN Science.app")
+    expect(账.at(-1)).toBe("改名 /Applications/EcoAI.app.old-0.0.2 → /Applications/EcoAI.app")
   })
 })
 

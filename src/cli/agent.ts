@@ -302,9 +302,9 @@ export async function runCliAgent(agentId?: string, resume?: string | true): Pro
     await Promise.all([refreshUsage(), refreshPermissions(), refreshPlan()])
     if (view) { view.start(); if (restored) view.restore(restored) }
     else {
-      say('\nDAWN Science\n')
+      say('\nEcoAI\n')
       status(); say('/exit 返回 Shell · /help 帮助 · Ctrl-C 停止\n')
-      if (restored) for (const item of restored.items) if (item.kind === 'text') say(`${item.who === 'user' ? '你' : 'DAWN'}：${item.text}`)
+      if (restored) for (const item of restored.items) if (item.kind === 'text') say(`${item.who === 'user' ? '你' : 'EcoAI'}：${item.text}`)
     }
     prompt()
     if (restored) updateSuggestion()

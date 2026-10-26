@@ -118,15 +118,15 @@ export function 默认终端(平台: NodeJS.Platform = process.platform, shell: 
  * **那不是坏的，是他配置里写的那样**。想换成对话形态，把 `kind: pty` 改成
  * `kind: cli` 即可。
  */
-export const DEFAULT_CONFIG_YAML = `# DAWN Science —— agent 配置
+export const DEFAULT_CONFIG_YAML = `# EcoAI —— agent 配置
 #
-# 这份文件是第一次启动时自动生成的，可以随意修改；DAWN 不会覆盖它。
+# 这份文件是第一次启动时自动生成的，可以随意修改；EcoAI 不会覆盖它。
 # 改完重启应用生效。
 #
 # 三种 agent：
-#   kind: native  —— 由 DAWN 内置的 agent 直接调模型 API，需要在「设置」里填 key
+#   kind: native  —— 由 EcoAI 内置的 agent 直接调模型 API，需要在「设置」里填 key
 #   kind: cli     —— 托管一个本地命令行 agent（claude / codex）并**以对话形态呈现**，
-#                    用它自己的登录，不需要在 DAWN 里配 key。
+#                    用它自己的登录，不需要在 EcoAI 里配 key。
 #                    它的工具调用会落在账本上（项目概览里看得到）
 #   kind: pty     —— 一个**终端**：跑任意命令，也可以在里面手动起 claude / codex 的 TUI
 #   kind: kernel  —— 一个 **Jupyter 内核**（Python / R）：不思考，只执行你给的代码，
@@ -180,7 +180,7 @@ agents:
 
   # 托管本地的 codex CLI，以对话形态呈现。
   #
-  # **不写 models**：codex 的清单 DAWN 会自己去
+  # **不写 models**：codex 的清单 EcoAI 会自己去
   # ~/.codex/models_cache.json 里读（只取 visibility 为 list 的，按它的 priority 排）。
   # 想覆盖就自己写一行 models: [...]，配置声明优先于自动发现。
   codex:

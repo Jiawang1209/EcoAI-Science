@@ -19,8 +19,8 @@ async function ready(page: Page) {
   await expect.poll(async () => /[$#%]$/.test(stripVTControlCharacters(await page.locator('.dock .xterm-screen').innerText()).trimEnd())).toBe(true)
 }
 async function enter(page: Page) {
-  await ready(page); await page.getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await ready(page); await page.getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
 }
 async function mode(page: Page, terminalId: string) {
   return page.evaluate(async id => (await window.dawn!.invoke('getTerminalAgentMode', { terminalId: id }) as any).data, terminalId)
@@ -49,7 +49,7 @@ test('returning across a changed CLI directory reopens the original PTY even aft
   await page.getByRole('button', { name: 'nested', exact: true }).click()
   await page.getByRole('button', { name: /^AUDIT_NESTED_AGENT/ }).click()
   await panel(page)
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const count = await page.evaluate(async () => {
     const projects = (await window.dawn!.invoke('listProjects', {}) as any).data
     const sessions = await Promise.all(projects.map(async (p: any) => (await window.dawn!.invoke('listSessions', { projectId: p.projectId }) as any).data))
@@ -61,7 +61,7 @@ test('returning across a changed CLI directory reopens the original PTY even aft
 test('an exited terminal cannot restart Agent or accept input, and still returns to the conversation', async ({ dawn }) => {
   const { page } = dawn; await open(page); await ready(page); await type(page, 'exit')
   await expect(page.locator('.dock')).toContainText('已结束')
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Normal 模式', exact: true })).toBeDisabled()
   await page.locator('.dock').getByRole('button', { name: '返回会话', exact: true }).click()
   await expect(page.locator('.main .composer-card')).toBeVisible()

@@ -106,13 +106,18 @@ test("顶栏18px品牌保留28px按钮和32px标志", async ({ dawn }) => {
       logo: rect('.brand-mark').width,
       sidebar: rect('.sidebar').width,
       endPadding: rect('.sidebar').right - rect('.shortcut-toggle').right,
+      brandGap: rect('.side-toggle').left - rect('.brand-stack').right,
+      actionGap: rect('.shortcut-toggle').left - rect('.side-toggle').right,
     }
   })
   expect(geometry.buttons).toEqual(Array.from({ length: 2 }, () => ({ width: 28, height: 32 })))
-  expect(geometry.brand).toBe('DAWN Science')
+  expect(geometry.brand).toBe('EcoAI-Science')
   expect(geometry.font).toBe('18px')
   expect(geometry.logo).toBe(32)
   expect(geometry.sidebar).toBe(260)
   expect(geometry.endPadding).toBeGreaterThanOrEqual(4)
-  expect(geometry.endPadding).toBeLessThanOrEqual(6)
+  // 名称宽度变化会改变剩余留白；按钮间距和字号保持原设计。
+  expect(geometry.endPadding).toBeLessThanOrEqual(8)
+  expect(geometry.brandGap).toBe(8)
+  expect(geometry.actionGap).toBe(4)
 })

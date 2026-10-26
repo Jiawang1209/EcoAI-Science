@@ -8,7 +8,7 @@ test("关于页宽窄排版、主题色检查、失败恢复及自动检查可�
   await page.getByRole("button", { name: "设置", exact: true }).click()
   await page.locator(".settings-column-list").getByRole("button", { name: "关于", exact: true }).click()
   const pane = page.locator(".about-pane")
-  await expect(pane.getByRole("heading", { name: "DAWN Science", exact: true })).toBeVisible()
+  await expect(pane.getByRole("heading", { name: "EcoAI", exact: true })).toBeVisible()
   await expect(pane.getByRole("status")).toHaveText("已是最新")
   const check = pane.getByRole("button", { name: "检查更新", exact: true })
   await check.click()

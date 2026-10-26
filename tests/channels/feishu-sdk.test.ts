@@ -20,7 +20,7 @@ describe("假飞书 × fakeFeishuSdk", () => {
     await srv.reset()
     const sdk = fakeFeishuSdk(srv.url)
     let qr = ""
-    const p = sdk.注册应用({ name: "DAWN-Science", desc: "测试" }, (u) => {
+    const p = sdk.注册应用({ name: "EcoAI", desc: "测试" }, (u) => {
       qr = u
     }, new AbortController().signal)
     await new Promise((r) => setTimeout(r, 50))

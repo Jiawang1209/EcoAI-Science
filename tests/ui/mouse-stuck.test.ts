@@ -75,7 +75,7 @@ describe("丢掉的 mouseup", () => {
     盯.停()
   })
 
-  it("窗口失焦 → 补一次（鼠标已经不在 DAWN 上了，这时收不到 mousemove）", () => {
+  it("窗口失焦 → 补一次（鼠标已经不在 EcoAI 上了，这时收不到 mousemove）", () => {
     卸载 = 装上补丢掉的抬起()
     const 盯 = 盯着抬起()
     document.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))

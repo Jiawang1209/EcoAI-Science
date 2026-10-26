@@ -23,7 +23,8 @@ export const EN: Readonly<Record<string, string>> = {
   "自然语言交给 AI；手动命令可直接接回": "Ask AI in plain language; switch to manual commands to take over.",
   "终端协助操作失败：{0}": 'Terminal assistance failed: {0}',
   "终端模式": "Terminal mode",
-  "DAWN 模式": "DAWN mode",
+  "EcoAI 模式": "EcoAI mode",
+  "EcoAI 首页": "EcoAI home",
   "Normal 模式": "Normal mode",
   "终端协助": 'Terminal assistance',
   "当前程序": 'Program',
@@ -969,7 +970,7 @@ export const EN: Readonly<Record<string, string>> = {
     "⚠ This system offers no secure storage; credentials will be saved as plain text in the user data directory",
   "还没有填任何 API key，暂时不能对话——点这里填一个": "No API key yet, so chatting is not possible — click here to add one",
   "首次设置": "First-time setup",
-  "欢迎使用 DAWN Science": "Welcome to DAWN Science",
+  "欢迎使用 EcoAI": "Welcome to EcoAI",
   "先跳过": "Skip for now",
   "模型 key": "Model key",
   "（必需）": "(required)",
@@ -1107,7 +1108,7 @@ export const EN: Readonly<Record<string, string>> = {
   "带上了：{0}": "Used: {0}",
 
   "远程助理": "Remote assistant",
-  "人不在电脑前，也能跟 DAWN 说话。微信里那个联系人就是 DAWN 本人。": "Talk to DAWN when you're away from the computer. The WeChat contact is DAWN itself.",
+  "人不在电脑前，也能跟 EcoAI 说话。微信里那个联系人就是 EcoAI 本人。": "Talk to EcoAI when you're away from the computer. The WeChat contact is EcoAI itself.",
   "微信": "WeChat",
   "正在问状态…": "Checking…",
   "绑定失效了，重新扫码": "The binding expired — scan again",
@@ -1141,8 +1142,8 @@ export const EN: Readonly<Record<string, string>> = {
   "提交配对码": "Submit code",
   "不扫了": "Never mind",
 
-  "ACP 适配器是一个独立进程，DAWN 通过 Agent Client Protocol 跟它说话。它会主动问你要不要允许某次工具调用，所以这类会话里会多一张权限卡。":
-    "An ACP adapter is a separate process DAWN talks to over the Agent Client Protocol. It asks before each tool call, so these sessions show an extra permission card.",
+  "ACP 适配器是一个独立进程，EcoAI 通过 Agent Client Protocol 跟它说话。它会主动问你要不要允许某次工具调用，所以这类会话里会多一张权限卡。":
+    "An ACP adapter is a separate process EcoAI talks to over the Agent Client Protocol. It asks before each tool call, so these sessions show an extra permission card.",
   "移除这个适配器": "Remove this adapter",
   "还没有接入任何 ACP 适配器。": "No ACP adapter connected yet.",
   "一键接入": "One-click setup",
@@ -1217,15 +1218,15 @@ export const EN: Readonly<Record<string, string>> = {
   "正在算变更": "Computing changes",
   "正在算差异": "Computing diff",
   "这个工作区不是 git 仓库": "This workspace is not a git repository",
-  "没有基线，DAWN 不替它猜「改了什么」。下面那半仍然来自账本。":
-    "With no baseline, DAWN will not guess what changed. The lower half still comes from the ledger.",
+  "没有基线，EcoAI 不替它猜「改了什么」。下面那半仍然来自账本。":
+    "With no baseline, EcoAI will not guess what changed. The lower half still comes from the ledger.",
   "跟上次提交比。这里可能包含你自己的修改——本阶段还分不清是谁改的。":
     "Compared against the last commit. This may include your own edits — at this stage we cannot tell them apart.",
   "仓库里的改动": "Changes in the repository",
   "跟上次提交比，仓库里没有改动。": "No changes in the repository since the last commit.",
   "这次跑出来的产物": "Artifacts produced",
-  "没有记到 git 看不见的产物。散在约定目录之外、又不是 DAWN 的工具写的东西，这里看不见。":
-    "No artifacts recorded that git cannot see. Anything written outside the convention directories by something other than DAWN's own tools is invisible here.",
+  "没有记到 git 看不见的产物。散在约定目录之外、又不是 EcoAI 的工具写的东西，这里看不见。":
+    "No artifacts recorded that git cannot see. Anything written outside the convention directories by something other than EcoAI's own tools is invisible here.",
   "git 忽略了这些，所以上面那半看不到它们。它们来自账本，以及科研约定的那几个产物目录。":
     "git ignores these, so the half above cannot see them. They come from the ledger and from the convention artifact directories.",
   "内容没有变化。": "The contents did not change.",
@@ -1400,7 +1401,7 @@ export const EN: Readonly<Record<string, string>> = {
   "「{0}」改好了；已排队的那次按旧的跑": "\"{0}\" updated; a run already queued keeps the old definition",
   "「{0}」建好了": "\"{0}\" created",
   "到点了就开一段全新的会话、把任务说明发给它、等它做完——不继承任何对话。无人值守：要确认的一律拒。": "When due, a brand-new session starts, gets the task description, and runs to completion — nothing is inherited from any conversation. Unattended: anything that needs confirmation is refused.",
-  "DAWN 关着的时候不跑。回来时超过 15 分钟的那次记成「跳过」，不补。": "Nothing runs while DAWN is closed. A run missed by more than 15 minutes is recorded as skipped, not replayed.",
+  "EcoAI 关着的时候不跑。回来时超过 15 分钟的那次记成「跳过」，不补。": "Nothing runs while EcoAI is closed. A run missed by more than 15 minutes is recorded as skipped, not replayed.",
   "新建定时任务": "New schedule",
   "下一次：{0}": "Next: {0}",
   "编辑定时任务": "Edit schedule",
@@ -1988,7 +1989,7 @@ export const EN: Readonly<Record<string, string>> = {
   "这一轮还没说完，等它做完或先停止，再压缩上下文": "This turn isn't finished yet. Wait for it or stop it first, then compact the context",
   // 上下文用量与压缩（2026-09-27）· 仪表
   "读不到": "unavailable",
-  "这是外部 agent，它自己管上下文与压缩；DAWN 读不到它用了多少": "This is an external agent that manages its own context and compaction; DAWN can't read how much it has used",
+  "这是外部 agent，它自己管上下文与压缩；EcoAI 读不到它用了多少": "This is an external agent that manages its own context and compaction; EcoAI can't read how much it has used",
   "没取到：{0}": "Couldn't fetch: {0}",
   "还没取到": "Not fetched yet",
   "到 {0} tokens 会自动压缩（给摘要留 {1}）": "Compacts automatically at {0} tokens ({1} kept free for the summary)",
@@ -2027,7 +2028,7 @@ export const EN: Readonly<Record<string, string>> = {
   "压缩上下文": "Compact context",
   "指令": "Command",
   "把早先的对话换成一段摘要交给模型，腾出上下文；后面可以跟一句要保留什么": "Replace earlier conversation with a summary for the model to free up context; add what to keep after it",
-  "外部 agent 自己管上下文，DAWN 压不了": "External agents manage their own context; DAWN can't compact it",
+  "外部 agent 自己管上下文，EcoAI 压不了": "External agents manage their own context; EcoAI can't compact it",
   "这段不是和模型的对话，没有上下文可压": "This session isn't a chat with a model, so there's no context to compact",
   // 回退这一轮（2026-09-27）：后端 fault 的 msgid
   "这句不在对话里了": "That message is no longer in the chat",
@@ -2057,7 +2058,7 @@ export const EN: Readonly<Record<string, string>> = {
   "对话：选「文件和对话一起回退」，这句和它之后的对话撤掉，这句放回输入框。": "Chat: with “Rewind files and chat”, this message and everything after it are removed, and the message goes back into the input box.",
   "对话：这句和它之后的对话撤掉，这句放回输入框；文件保持现在的样子。": "Chat: this message and everything after it are removed and the message goes back into the input box; files stay as they are now.",
   "文件回退不了：{0}": "Files can't be rewound: {0}",
-  "远端会话的文件在服务器上，DAWN 不在服务器上存任何东西": "in a remote session the files live on the server, and DAWN keeps nothing there",
+  "远端会话的文件在服务器上，EcoAI 不在服务器上存任何东西": "in a remote session the files live on the server, and EcoAI keeps nothing there",
   "这句在开始存档之前（这段会话早于回退功能）": "this message predates the archive (the session is older than rewind)",
   "这句之后有一轮没存上档": "a later turn wasn't archived",
   "工作区超过 2 万个文件，没法存档": "the workspace has more than 20,000 files, so it can't be archived",
@@ -2107,7 +2108,7 @@ export const EN: Readonly<Record<string, string>> = {
   "定时「{0}」失败了": "Scheduled “{0}” failed",
   "定时「{0}」取消了": "Scheduled “{0}” was cancelled",
   "桌面通知是通的": "Desktop notifications work",
-  "点这一条会回到 DAWN。": "Click this to go back to DAWN.",
+  "点这一条会回到 EcoAI。": "Click this to go back to EcoAI.",
   // 桌面通知（2026-09-27）：设置里那一格与点通知回来那一句
   "桌面通知": "Desktop notifications",
   "一轮做完": "Turn finished",
@@ -2123,7 +2124,7 @@ export const EN: Readonly<Record<string, string>> = {
   "试一下": "Try it",
   "macOS 可能拦下未签名应用的通知，按一下看它弹不弹。": "macOS may silently block notifications from unsigned apps — press to see whether one shows up.",
   "发一条试试": "Pop a test notification",
-  "已发出——没看到的话，去系统设置的「通知」里允许 DAWN Science。": "Sent — if you didn't see it, allow DAWN Science under Notifications in System Settings.",
+  "已发出——没看到的话，去系统设置的「通知」里允许 EcoAI。": "Sent — if you didn't see it, allow EcoAI under Notifications in System Settings.",
   "没弹出来：{0}": "Nothing was shown: {0}",
   "那段对话已经不在了（可能已归档或删除）": "That chat is gone (it may have been archived or deleted)",
   // 会话全文搜索（2026-09-27）
@@ -2206,7 +2207,7 @@ export const EN: Readonly<Record<string, string>> = {
   "（已生成）": "(made)",
   "（还没有）": "(not yet)",
   "（计划外）": "(not in the plan)",
-  "这个 agent 不归 DAWN 管工具，先出方案用不了": "DAWN doesn't control this agent's tools, so plan mode isn't available",
+  "这个 agent 不归 EcoAI 管工具，先出方案用不了": "EcoAI doesn't control this agent's tools, so plan mode isn't available",
   "这段会话还没准备好先出方案，稍等再试": "This session isn't ready for plan mode yet; try again in a moment",
   "这段不是和模型的对话，没有先出方案": "This isn't a conversation with a model, so there's no plan mode",
   "先出方案 · 这一段只看不改，方案批了才动手（再按一下「先出方案」退出）": "Planning · nothing is changed until you approve a plan (press “Plan first” again to leave)",

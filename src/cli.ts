@@ -1,10 +1,10 @@
 /**
  * CLI 入口：无参数进入 DAWN Agent，/exit 回原 Shell。
  *
- *   dawn agents           列出配置里的所有 agent
- *   dawn run <agent>      起一个会话并接管当前终端
- *   dawn sessions         列出落库的会话
- *   dawn demo [agent]     用 FakeRuntime 跑一遍生命周期，不起真实进程
+ *   ecoai agents           列出配置里的所有 agent
+ *   ecoai run <agent>      起一个会话并接管当前终端
+ *   ecoai sessions         列出落库的会话
+ *   ecoai demo [agent]     用 FakeRuntime 跑一遍生命周期，不起真实进程
  *
  * 环境变量：DAWN_CONFIG（默认 providers.yaml）、DAWN_DB（默认 .dawn.db）
  */
@@ -110,7 +110,7 @@ function cmdSessions(): void {
   if (fixed > 0) console.log(`启动对账：${fixed} 条残留会话已修正为 exited\n`)
   const rows = store.list()
   if (rows.length === 0) {
-    console.log(`数据库 ${DB} 中还没有会话。试试 dawn demo 或 dawn run <agent>。`)
+    console.log(`数据库 ${DB} 中还没有会话。试试 ecoai demo 或 ecoai run <agent>。`)
     return
   }
   console.table(
@@ -128,7 +128,7 @@ function cmdSessions(): void {
 /** 起一个会话并把当前终端交给它。 */
 async function cmdRun(agentId: string | undefined): Promise<void> {
   if (!agentId) {
-    console.error("用法: dawn run <agentId>")
+    console.error("用法: ecoai run <agentId>")
     process.exit(2)
   }
   const reg = requireConfig()
@@ -175,7 +175,7 @@ async function cmdRun(agentId: string | undefined): Promise<void> {
   })
 
   // 管道输入到 EOF：native 会话要等当前回合跑完再收摊，
-  // 否则脚本化调用（echo ... | dawn run）会在模型还没答完时就被切断。
+  // 否则脚本化调用（echo ... | ecoai run）会在模型还没答完时就被切断。
   process.stdin.on("end", () => {
     void (async () => {
       const rt = mgr.runtimeOf(session.id)
@@ -246,11 +246,11 @@ async function agent(agentId?: string, resume?: string | true): Promise<never> {
 async function main(): Promise<void> {
   const [, , cmd, ...rest] = process.argv
   if (cmd === '--resume') {
-    if (rest.length > 1 || rest[0]?.startsWith('-')) throw new Error('用法：dawn --resume [完整会话ID]')
+    if (rest.length > 1 || rest[0]?.startsWith('-')) throw new Error('用法：ecoai --resume [完整会话ID]')
     return agent(undefined, rest[0] || true)
   }
   if (!cmd || cmd === '--agent') {
-    if (cmd === '--agent' && !rest[0]) throw new Error('用法：dawn --agent <名称>')
+    if (cmd === '--agent' && !rest[0]) throw new Error('用法：ecoai --agent <名称>')
     return agent(rest[0])
   }
   if (cmd === '--help' || cmd === '-h') { console.log(CLI_HELP); return }
@@ -267,12 +267,12 @@ async function main(): Promise<void> {
     case "demo":
       return cmdDemo(rest[0])
     default:
-      console.log(`DAWN Science
+      console.log(`EcoAI
 
-  dawn agents           列出配置里的所有 agent
-  dawn run <agent>      起一个会话并接管当前终端
-  dawn sessions         列出落库的会话
-  dawn demo [agent]     用 FakeRuntime 跑一遍完整生命周期
+  ecoai agents           列出配置里的所有 agent
+  ecoai run <agent>      起一个会话并接管当前终端
+  ecoai sessions         列出落库的会话
+  ecoai demo [agent]     用 FakeRuntime 跑一遍完整生命周期
 
 环境变量：
   DAWN_CONFIG   配置文件路径，默认 providers.yaml

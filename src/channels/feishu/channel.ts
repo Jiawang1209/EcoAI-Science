@@ -89,7 +89,7 @@ export interface FeishuDeps {
   now?: () => number
 }
 
-export const FEISHU_CONTACT_NAME = "DAWN-Science"
+export const FEISHU_CONTACT_NAME = "EcoAI"
 
 /** 通知开关(`feishu.notify` 里的 json)。**缺省全开**——与微信同一张表 */
 export interface FeishuNotifySettings {
@@ -199,7 +199,7 @@ export class FeishuChannel {
     void (async () => {
       try {
         const 回: 设备流回执 = await this.deps.sdk().注册应用(
-          { name: FEISHU_CONTACT_NAME, desc: "DAWN Science 的远程助理——对它说话就是对工作台说话" },
+          { name: FEISHU_CONTACT_NAME, desc: "EcoAI 的远程助理——对它说话就是对工作台说话" },
           (url) => {
             this.login = { qrUrl: url, step: "wait", message: "用飞书扫一扫(会创建一个自建应用,扫码的人就是唯一授权人)" }
           },

@@ -23,8 +23,8 @@ test('a pending plan survives closing the last terminal and history resume, then
   const { page, workspace, requests } = dawn
   await 在项目里开会话(page); await 等进了对话(page); await openTerminal(page)
   await expect.poll(async () => /[$#%]$/.test((await page.locator('.dock .xterm-rows').innerText()).trimEnd())).toBe(true)
-  await page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.locator('.dock .xterm-rows')).toContainText('> DAWN')
+  await page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.locator('.dock .xterm-rows')).toContainText('> EcoAI')
   const originalTerminal = Object.keys(await page.evaluate(() => JSON.parse(sessionStorage.getItem('dawn.window.terminal-owner') || '{}')))[0]!
   const originalMode = await invoke(page, 'getTerminalAgentMode', { terminalId: originalTerminal })
   const sessionId = originalMode.sessionId

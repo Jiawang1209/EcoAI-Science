@@ -68,7 +68,7 @@ export function createPiCredentialStore(port: CredentialsPort): PiCredentialStor
         // DAWN 的凭证库只存 api_key。OAuth 一类凭证需要刷新流程，
         // **不支持就明说，不要静默存成别的东西**（规格 7.5）
         throw new Error(
-          `DAWN 的凭证库只支持带 key 的 api_key 凭证，收到 "${next.type}"`,
+          `EcoAI 的凭证库只支持带 key 的 api_key 凭证，收到 "${next.type}"`,
         )
       }
       port.set(providerId, next.key)

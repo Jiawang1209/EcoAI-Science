@@ -78,7 +78,7 @@ async function 接起来(装配: {
 }
 
 describe("整条路", () => {
-  it("**工具清单从 DAWN 现问现答**，形状是 MCP 的", async () => {
+  it("**工具清单从 EcoAI 现问现答**，形状是 MCP 的", async () => {
     const { client } = await 接起来({})
     const r = await client.listTools()
     expect(r.tools.map((t) => t.name)).toEqual(["dawn_list_skills", "dawn_record_note"])
@@ -90,7 +90,7 @@ describe("整条路", () => {
     expect(r.tools[1]?.inputSchema).toMatchObject({ required: ["text"] })
   })
 
-  it("**调用真的打到 DAWN**，参数与会话都带过去了", async () => {
+  it("**调用真的打到 EcoAI**，参数与会话都带过去了", async () => {
     const 记 : { s: string; n: string; a: Record<string, unknown> }[] = []
     const { client } = await 接起来({
       会话: "会话甲",

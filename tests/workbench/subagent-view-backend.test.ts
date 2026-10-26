@@ -112,7 +112,7 @@ describe("openSubagent", () => {
     expect(snap.items.some((i) => i.type === "notice" && i.text.includes("没有留下过程记录"))).toBe(true)
     expect(snap.subagent).toMatchObject({ canAsk: false, askWhy: "no-transcript", result: { text: "它是个测试仓库" } })
   })
-  it("盘上写着 running（DAWN 关掉时还在跑）：记成失败并说清楚", async () => {
+  it("盘上写着 running（EcoAI 关掉时还在跑）：记成失败并说清楚", async () => {
     const ctx = make()
     const s = await ctx.开一段()
     摆一个(ctx.sessions.get(s)!.sessionDir, "c5", true, "running")

@@ -10,7 +10,7 @@ async function invoke(page: Page, operation: string, input: unknown = {}): Promi
 }
 
 for (const agent of [false, true]) {
-  test(`quitting with two live ${agent ? 'DAWN' : 'Normal'} terminals exits cleanly and reopening retains the conversations`, async ({ dawn }) => {
+  test(`quitting with two live ${agent ? 'EcoAI' : 'Normal'} terminals exits cleanly and reopening retains the conversations`, async ({ dawn }) => {
     const { page, app } = dawn
     await 在项目里开会话(page); await 等进了对话(page)
     await page.locator('.composer-card .attach-trigger').click()
@@ -19,8 +19,8 @@ for (const agent of [false, true]) {
       await expect(page.locator('.dock').getByRole('button', { name: 'Normal 模式', exact: true })).toBeEnabled()
       await expect.poll(async () => /[$#%]$/.test((await page.locator('.dock .xterm-rows').innerText()).trimEnd())).toBe(true)
       if (agent) {
-        await page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-        await expect(page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+        await page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+        await expect(page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
       }
     }
     await start()

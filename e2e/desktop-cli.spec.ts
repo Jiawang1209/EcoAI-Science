@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import { TerminalAgentStateSchema } from '../src/protocol/terminal.js'
 
-test('DAWN and Normal use the desktop model, preserve Shell state, and refuse pending input', async ({ dawn }) => {
+test('EcoAI and Normal use the desktop model, preserve Shell state, and refuse pending input', async ({ dawn }) => {
   const { page, workspace, requests } = dawn
   await 在项目里开会话(page); await 等进了对话(page)
   await page.locator('.composer-card .attach-trigger').click()
@@ -21,7 +21,7 @@ test('DAWN and Normal use the desktop model, preserve Shell state, and refuse pe
     const result = await window.dawn!.invoke('subscribeSession', { sessionId: id }) as any
     return result.data.terminal ?? ''
   }, terminalId))
-  const agent = dock.getByRole('button', { name: 'DAWN 模式', exact: true })
+  const agent = dock.getByRole('button', { name: 'EcoAI 模式', exact: true })
   const normal = dock.getByRole('button', { name: 'Normal 模式', exact: true })
   await type('export DAWN_MODE_SAMPLE=preserved; printf "%s|%s|%s" "$$" "$PWD" "$DAWN_MODE_SAMPLE" > before.txt')
   await expect.poll(() => existsSync(join(workspace, 'before.txt'))).toBe(true)
@@ -39,7 +39,7 @@ test('DAWN and Normal use the desktop model, preserve Shell state, and refuse pe
     return response.data
   }, terminalId))
   expect(mode.selection).toEqual({ provider: 'deepseek', model: 'deepseek-flash' })
-  await expect.poll(text).toContain(`DAWN Science · ${mode.selection!.model}`)
+  await expect.poll(text).toContain(`EcoAI · ${mode.selection!.model}`)
   await type('这是桌面 CLI 连接验收，请简短回答。')
   await expect.poll(text, { timeout: 30000 }).toContain('假模型已应答')
   expect(requests).toEqual(expect.arrayContaining([
@@ -77,8 +77,8 @@ test('return opens the same Agent conversation and continues it without creating
   await page.locator('.dock').getByRole('button', { name: '返回会话', exact: true }).click()
   await expect(composer).toHaveValue('保留原会话草稿 CONTEXT_DRAFT')
   await open()
-  await page.getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 15000 })
+  await page.getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 15000 })
   const state = await page.evaluate(async terminalId => (await window.dawn!.invoke('getTerminalAgentMode', { terminalId }) as any).data, terminal.sessionId)
   expect(state.sessionId).toBeTruthy(); expect(state.sessionId).not.toBe(original.sessionId)
   await page.locator('.dock .xterm-helper-textarea').focus()
@@ -100,7 +100,7 @@ test('return opens the same Agent conversation and continues it without creating
   expect((await sessions()).length).toBe(count)
   // The CLI's graphical view can reopen the original PTY.
   await open()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const current = await page.evaluate(async () => {
     const p = await window.dawn!.invoke('listProjects', {}) as any
     return (await window.dawn!.invoke('listSessions', { projectId: p.data[0].projectId }) as any).data.filter((x: any) => x.kind === 'pty').map((x: any) => x.sessionId)

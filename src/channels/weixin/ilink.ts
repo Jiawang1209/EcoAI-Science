@@ -27,7 +27,7 @@ export const ILINK_BASE_URL = "https://ilinkai.weixin.qq.com"
 export const ILINK_CDN_BASE_URL = "https://novac2c.cdn.weixin.qq.com/c2c"
 
 /** 我们报给服务端的身份。**只用于可观测性**，不参与鉴权与路由（协议笔记 §1） */
-const BOT_AGENT = "DAWN-Science/0.1"
+const BOT_AGENT = "EcoAI/0.1"
 const CHANNEL_VERSION = "0.1.0"
 /** `iLink-App-ClientVersion`：`major<<16 | minor<<8 | patch`，与插件同一编码 */
 const CLIENT_VERSION = String((0 << 16) | (1 << 8) | 0)

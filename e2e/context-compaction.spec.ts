@@ -241,7 +241,7 @@ test.describe("外部 agent", () => {
     const 面板 = await 面板搜(page, "压缩上下文")
     const 项 = 面板.getByRole("option", { name: /压缩上下文/ })
     await expect(项).toHaveAttribute("aria-disabled", "true")
-    await expect(项).toContainText("外部 agent 自己管上下文，DAWN 压不了")
+    await expect(项).toContainText("外部 agent 自己管上下文，EcoAI 压不了")
     await page.keyboard.press("Escape")
     await expect(面板).toBeHidden()
   })

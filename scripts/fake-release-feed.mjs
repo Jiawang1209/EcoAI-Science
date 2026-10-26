@@ -18,16 +18,16 @@ import { createReadStream, statSync } from "node:fs"
 
 /** 十个资源的名字与真 v0.0.2 完全同构（只是内容是假的） */
 const 资源名 = (版本) => [
-  `DAWN-Science-${版本}-linux-amd64.deb`,
-  `DAWN-Science-${版本}-linux-arm64.AppImage`,
-  `DAWN-Science-${版本}-linux-arm64.deb`,
-  `DAWN-Science-${版本}-linux-x86_64.AppImage`,
-  `DAWN-Science-${版本}-mac-arm64.dmg`,
-  `DAWN-Science-${版本}-mac-arm64.zip`,
-  `DAWN-Science-${版本}-mac-x64.dmg`,
-  `DAWN-Science-${版本}-mac-x64.zip`,
-  `DAWN-Science-${版本}-win-x64-portable.exe`,
-  `DAWN-Science-${版本}-win-x64.exe`,
+  `EcoAI-Science-${版本}-linux-amd64.deb`,
+  `EcoAI-Science-${版本}-linux-arm64.AppImage`,
+  `EcoAI-Science-${版本}-linux-arm64.deb`,
+  `EcoAI-Science-${版本}-linux-x86_64.AppImage`,
+  `EcoAI-Science-${版本}-mac-arm64.dmg`,
+  `EcoAI-Science-${版本}-mac-arm64.zip`,
+  `EcoAI-Science-${版本}-mac-x64.dmg`,
+  `EcoAI-Science-${版本}-mac-x64.zip`,
+  `EcoAI-Science-${版本}-win-x64-portable.exe`,
+  `EcoAI-Science-${版本}-win-x64.exe`,
 ]
 
 export function startFakeReleaseFeed(opts = {}) {

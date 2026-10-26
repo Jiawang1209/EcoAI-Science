@@ -8,15 +8,15 @@ import { github发布源 } from "../../src/update/发布源.js"
 /** 2026-09-06 从真 API 上取回来的形状（只留我们用到的字段） */
 const 真形状 = {
   tag_name: "v0.0.2",
-  html_url: "https://github.com/Jiawang1209/DAWN-Science/releases/tag/v0.0.2",
+  html_url: "https://github.com/Jiawang1209/EcoAI-Science/releases/tag/v0.0.2",
   published_at: "2026-09-05T12:00:00Z",
   draft: false,
   prerelease: false,
   assets: [
     {
-      name: "DAWN-Science-0.0.2-mac-arm64.zip",
+      name: "EcoAI-Science-0.0.2-mac-arm64.zip",
       size: 223_317_849,
-      browser_download_url: "https://github.com/.../DAWN-Science-0.0.2-mac-arm64.zip",
+      browser_download_url: "https://github.com/.../EcoAI-Science-0.0.2-mac-arm64.zip",
     },
   ],
 }

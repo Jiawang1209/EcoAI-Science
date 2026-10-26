@@ -31,8 +31,8 @@ async function snapshot(page: Page, sessionId: string) {
 async function enter(page: Page, terminalId: string) {
   // Rendering xterm is earlier than the login Shell becoming ready under CPU load.
   await expect.poll(async () => stripVTControlCharacters((await snapshot(page, terminalId)).terminal).trimEnd().endsWith('$')).toBe(true)
-  await page.getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 15000 })
+  await page.getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 15000 })
 }
 
 test('the selected terminal returns to its own Agent rather than another live terminal', async ({ dawn }) => {

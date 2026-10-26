@@ -1,485 +1,162 @@
 <div align="center">
 
-<img src="packaging/icon.png" alt="DAWN Science — R + Python" width="128" height="128">
+<img src="packaging/brand/ecoai-logo.png" width="280" alt="EcoAI 三叶 Logo" />
 
-# DAWN Science
+# EcoAI-Science
 
-**Data Agent Workbench with Notebooks — for science.**
+**面向生态学研究的本地 AI-Agent 工作台**
 
-An open-source, local-first AI workbench where multiple agents collaborate with you on R and Python data science.
+**简体中文** · [English](README.en.md)
 
-[Download](#install) · [Run from source](#run-from-source) · [Docs](#documentation) · [中文](#中文)
+把研究问题、数据、R / Python、文献与分析结果连接在同一个工作空间。
+
+[下载安装](https://github.com/Jiawang1209/EcoAI-Science/releases) · [从源码运行](#从源码运行) · [使用文档](#使用文档) · [DAWN-Science](https://github.com/Jiawang1209/DAWN-Science)
 
 </div>
 
----
+![EcoAI-Science App 主页](docs/images/ecoai-home.png)
 
-## What it is
+## EcoAI 是什么
 
-An **open-source, local-first desktop environment for research work**. You talk to a model; the model runs Python / R in a **persistent kernel** — variables survive across conversations and restarts — and you can keep typing into the same kernel from a notebook pane, with your cells recorded in the conversation. A project is a folder; a server becomes a remote workspace with nothing installed on it but `sshd`.
+EcoAI-Science（简称 EcoAI）是一款面向生态学研究的本地 AI-Agent 工作台。它把自然语言对话、代码执行、Notebook、文件管理、文献阅读和结果交付放在一个桌面应用中，帮助研究人员从“我想研究什么”，走到“结果是怎样得到的”。
 
-**The idea:**
+你可以与 Agent 讨论分析思路，让它在本地或 SSH 服务器上使用 R / Python 处理数据、绘图和运行脚本，也可以随时打开代码、查看输出、接管终端，并整理可供合作者检查和重跑的文件。
 
-```
-question  →  plan  →  call tools  →  run  →  traceable result
-```
+**EcoAI 借鉴并基于 DAWN-Science 的代码与设计发展，是 DAWN-Science 的姐妹产品。** 两者共享科研工作台的技术基础；EcoAI 聚焦生态学研究场景，围绕生态数据分析、科研绘图、文献证据与分析交付组织使用体验。项目保留原有开发历史与来源记录。
 
-The last step is what sets it apart from other AI tools — **not faster, but more trustworthy**.
+## 为什么选择 EcoAI
 
-**Domains:** data science · ecology · environmental science · bioinformatics
+- **围绕研究过程工作。** 问题讨论、分析方案、实际计算、结果查看和文件交付在同一工作区衔接，减少在聊天工具、脚本编辑器和文件夹之间来回切换。
+- **R 与 Python 共处一个工作台。** 使用你配置的解释器和 Jupyter 内核，连续执行代码、保留运行中的变量，并通过 Notebook 查看和手动运行代码单元。
+- **本地优先，数据由你管理。** 项目对应自己的文件夹，会话、设置和执行记录存放在本机；服务器文件通过 SSH 管理。使用在线模型或科研检索时，相关请求仍会发送到所选服务。
+- **过程可以检查。** 对话中能看到工具调用、代码、运行输出和生成文件；已有文件变更观察、执行记录与独立交付验证，便于发现问题和复查结果。
+- **模型与工具可以选择。** 可配置不同模型服务，也能接入已有的 Claude Code / Codex 等外部运行时，并按需要启用 MCP、技能和工具插件。
 
-<!-- TODO: real screenshot at docs/screenshot.png -->
+## 可以做什么
 
----
-
-## The name
-
-| | |
+| 能力 | 你可以怎样使用 |
 |---|---|
-| **D** | **Data** |
-| **A** | **Agent** |
-| **W** | **Workbench** |
-| **N** | **Notebook** |
+| 分析讨论与方案 | 围绕研究设计、变量、样本与统计方法讨论，使用“先出方案”在执行前审阅分析步骤 |
+| R / Python 数据分析 | 读取表格、整理数据、执行统计与建模代码，查看输出，并继续使用同一运行中内核 |
+| 科研绘图 | 用自己的数据生成图表，查看图片和脚本；可通过配置的 MLAI-science 案例库寻找绘图与分析参考 |
+| Notebook 与终端 | 查看代码单元、手动执行、导出 Notebook；在原 Shell 与 EcoAI Agent 模式之间切换 |
+| SSH 科研工作区 | 连接服务器，管理远端文件、运行命令、使用已安装的解释器，并上传或下载文件与目录 |
+| 文献检索 | 通过 OpenAlex / Crossref 检索题录、核对 DOI 元数据，保存实际查询到的文献清单 |
+| 多篇论文对照 | 阅读可提取文字的 PDF，记录物理页码和短摘，对照设计、样本量、方法与结论，整理 Excel 和 Markdown |
+| 公开科研数据查询 | 通过 GEO、NCBI SRA、UniProt 查询记录、核验编号并保存清单；UniProt 支持所选记录的 FASTA 保存 |
+| 分析结果交付 | 显式选择文件，整理脚本、说明与结果解读；可另行启动独立进程验证，并比较支持格式的结果 |
+| Office 与文件预览 | 使用 Word、Excel、PowerPoint、PDF 工具，查看 Markdown、图片、表格、PDF 和其他工作文件 |
+| 多 Agent 与专业 Bot | 使用内置专业角色、子任务和团队协作，让不同助手参与分析、代码与科研审查 |
+| 技能、记忆与连接器 | 管理可复用技能、确认长期记忆，接入 MCP 服务和浏览器工具 |
+| 定时任务与远程助理 | 在应用运行期间按计划启动任务；按需配置微信 / 飞书通道查看进展并继续交流 |
 
-*Data* (inside the acronym) + *Science* (the product name) spell **data science**; *Science* also covers ecology, environmental science and bioinformatics.
+生态学研究中，EcoAI 可协助整理样方和观测表格、探索环境梯度与响应变量、编写群落或多样性分析代码、制作科研图表，以及比较论文中的研究设计。具体方法由研究问题、数据条件与所配置的 R / Python 软件包决定。
 
----
+## 一个典型的研究过程
 
-## Install
+1. **打开项目文件夹。** 保留原始数据，用 `@` 引用相关表格、脚本或研究材料。
+2. **说明研究问题。** 告诉 EcoAI 研究对象、变量、重复单位与希望获得的结果；需要时先生成方案。
+3. **执行与查看。** 在已配置的 R / Python 内核或服务器中运行代码，检查日志、图表、Notebook 与实际文件。
+4. **调整与复核。** 修改分析步骤、接管终端或手动运行代码，核对统计前提与结果解释。
+5. **整理交付。** 导出脚本和说明，对所选结果进行独立验证，留下便于自己或合作者继续工作的材料。
 
-Download from [Releases](https://github.com/Jiawang1209/DAWN-Science/releases). **This is an early build (0.0.x) and the installers are unsigned**, so the first launch takes one extra click:
+例如：
 
-| Platform | Install | First launch |
-|---|---|---|
-| macOS | Open the `.dmg`, drag to Applications | Right-click → Open. On macOS 15+, also go to *System Settings → Privacy & Security* and click *Open Anyway* |
-| Windows | Run `…-setup.exe`, or just run `…-portable.exe` | SmartScreen: *More info → Run anyway*. **Windows builds are not yet verified on a real machine** — please report what breaks |
-| Linux | `chmod +x *.AppImage && ./DAWN-Science-*.AppImage`, or `sudo dpkg -i *.deb` | AppImage needs `sudo apt install libfuse2` |
+> 先阅读这个样方数据表，说明缺失值、采样层级和重复单位。围绕群落组成与环境梯度的关系提出分析方案，等我确认后再运行。
 
-**First launch** is a wizard: pick a provider (DeepSeek / Kimi / Qwen / Anthropic / OpenAI …), paste an API key, start chatting. The same screen can *detect local interpreters* and hook an existing Python / R up as a kernel — optional; chat works without it.
+> 比较这几篇论文的实验设计、独立样本量和主要结论。每项事实注明 PDF 页码，缺失的信息不要补猜，最后整理成论文对照表。
 
-**The app itself does not need Node.js.** External tools are only needed for the features that use them, and the UI says so when one is missing:
+## 安装与准备
 
-| To do this | You need |
+从 [EcoAI-Science Releases](https://github.com/Jiawang1209/EcoAI-Science/releases) 查看可用安装包。项目处于 **0.0.x 早期开发阶段**，具体平台和架构以当次发布附件为准。
+
+| 平台 | 安装方式与当前边界 |
 |---|---|
-| Notebook / run Python | Python 3 + `pip install ipykernel` |
-| R kernel | R + `IRkernel` |
-| Git facts about a project | git |
-| Remote workspace | `sshd` on the server — **nothing else is placed on the server** |
-| Hand work to Claude Code / Codex | The respective CLI installed locally (nice-to-have; chat works without it) |
+| macOS | 打开 `.dmg`，拖入 Applications。当前使用 ad-hoc 签名，尚无 Developer ID 公证；首次打开可能需要在“隐私与安全性”中允许 |
+| Windows | 使用安装器或便携版；可能出现 SmartScreen 提示。仍需 Windows 真机验收，不能把生成安装包等同于已验证兼容 |
+| Linux | 使用对应架构的 AppImage 或 `.deb`；具体系统依赖见[打包与发布](docs/打包与发布.md) |
 
----
+桌面安装包自带应用运行时，日常使用不要求另装 Node.js。按功能准备外部环境：
 
-## Features
-
-| | |
+| 使用场景 | 需要准备 |
 |---|---|
-| **Kernel in the conversation** | The model calls `run_code`; you watch every cell stream by in the dock's *Notebook* pane, type into the same kernel yourself, and your cells land in the conversation |
-| **Persistent kernels** | Variables survive across conversations and restarts, and can be interrupted; close the chat and `df` is still there |
-| **Remote workspaces** | Add a server over SSH — sessions, kernels, files and terminals run there; zero dependencies on the server |
-| **Right dock** | Files (local / remote), transfers, notebook, generated artifacts, web preview, watching the agent's browser |
-| **`@` references** | `@` a workspace file in the input box — path and type are passed, not contents |
-| **Multi-agent** | 22 bundled sub-agents; team mode with a lead, resumable members and a task board with dependencies |
-| **Professional Bots** | Manage reusable native/API assistants in the Bot dock, chat privately within a workspace, dispatch with `/`, discuss in one shared chat with individual avatars and bubbles, follow up with peers, hand off work and accept user intervention, or let the main conversation form a team and collect verified scripts, notes and figures with inline previews |
-| **Three permission levels** | Allow all / ask / block, plus a hard-deny list |
-| **Skills & plugins** | Skills with three-level toggles and import; Office (Word/Excel/PowerPoint/PDF, 14 tools), browser (15 tools) and long-term memory (three-track confirmation) plugins |
-| **Remote assistant** | WeChat / Feishu channels — scan a QR code, keep asking from your phone |
-| **Scheduled tasks** | At the set time, open a fresh session and run the task description |
-| **Artifacts** | `GENERATED · N` in the conversation, live list in the dock |
-| **Any provider** | 40+ via `pi`'s provider layer; or switch to a locally installed Claude Code / Codex (ACP) |
-| **Appearance** | Light / dark, one-click accent color, Chinese / English UI |
-
----
-
-## Four pillars
-
-### D · Data
-
-Persistent Python and R kernels (variables kept across cells, sessions and restarts; interruptible) · database connections and schema browsing · standardized artifact schemas (tables carry structure, charts carry data source and metric meaning, models carry hyper-parameters and evaluation metrics).
-
-### A · Agent
-
-An agent that plans, calls tools, executes and reports — not just chats. By default a local agent loop drives any API endpoint (DeepSeek / Kimi / Qwen …); it can also hand off to a locally installed Claude Code or Codex. MCP tool gateway · progressive skill loading · **optional multi-agent orchestration**.
-
-### W · Workbench
-
-A project is bound to a folder; configuration, knowledge and kernels hang off the project · local / WSL / SSH / GPU runtimes · run management for long jobs (pre-flight checks, heartbeats, bounded logs, environment snapshots).
-
-**Key structure: the kernel outlives the session.** Close a conversation and `df` is still in Python.
-
-### N · Notebook
-
-Conversation, notebook and side-by-side view are **three projections of one append-only entry sequence, not three implementations**. `code_cell` is a first-class citizen: re-runnable, editable, exportable to `.ipynb`, and cells written by a human are structurally identical to cells written by the agent.
-
----
-
-## Core claim: traceability
-
-Two kinds of information are **modeled separately**:
-
-| Layer | Content | Trust |
-|---|---|---|
-| **Agent claims** | what the agent says it did | to be verified |
-| **Repo facts** | git diff, test exit codes, lint / build results | authoritative |
-
-**State advances only when both agree**; a claim alone is never enough:
-
-```
-agent says "implemented", tests fail            → cannot enter DONE
-agent says "reviewed", no review artifact       → cannot hand off
-agent says "mergeable", diff ≠ plan             → back to REWORKING
-```
-
----
-
-## Status
-
-**Early release: usable day to day, interfaces still moving.** The local and remote main paths work and have been verified on real machines. Packaged for three platforms; signing and auto-update are not done yet.
-
-| | |
-|---|---|
-| Source | ~77k lines of TypeScript |
-| Tests | 197 unit/integration test files (vitest) + 107 e2e cases (Playwright, against the real build) + 10 pixel-exact visual baselines |
-| Changelog | [485 entries](docs/DEVELOPMENT_HISTORY.md), each with motivation and verification |
-| Next | signing & auto-update · artifact provenance / versions / annotations |
-
----
-
-## Run from source
-
-Node.js ≥ 22.
-
-```bash
-git clone https://github.com/Jiawang1209/DAWN-Science.git
-cd DAWN-Science
-npm ci
-cp .env.example .env        # add your API key (or do it in the first-run wizard)
-npm run app                 # build and launch
-```
-
-Development:
-
-```bash
-npm run dev:mock            # real pipeline + fake model, isolated dir, never touches real credentials
-npm test                    # unit + integration
-npm run test:e2e            # build, then Playwright against the real build
-npm run dist                # package for the current platform → release/
-```
-
-Command-line Agent (source build):
-
-```bash
-npm run build:cli
-./bin/dawn --help
-# Set DAWN_CONFIG and your provider's API key environment variable, then:
-./bin/dawn
-```
-
-Normal is your existing Shell; `dawn` enters Agent, `/exit` returns. CLI uses its own data directory and environment credentials. See [CLI setup](docs/CLI.md).
-
-Cross-compiling and Linux build deps: [打包与发布](docs/打包与发布.md).
-
----
-
-## Stack
-
-| Layer | Choice |
-|---|---|
-| Core | TypeScript / Node |
-| LLM providers | `@earendil-works/pi-ai` (40+ providers, DeepSeek / Kimi / Qwen native) |
-| Agent loop | `@earendil-works/pi-agent-core` |
-| Kernels | `enchannel-zmq-backend` + `@nteract/messaging` + `spawnteract` (Jupyter protocol — one stack for R and Python) |
-| Terminal | `node-pty` + `xterm.js` |
-| Tool protocol | `@modelcontextprotocol/sdk` (server + client) |
-| Persistence | SQLite (`better-sqlite3`, WAL) |
-| Shell | Electron |
-| Front-end | React + Vite · CodeMirror 6 · Plotly.js · TanStack Table |
-
----
-
-## Documentation
-
-Most docs are in Chinese.
-
-| Doc | Answers |
-|---|---|
-| [CLAUDE.md](CLAUDE.md) | Where each feature's spec lives, the three admission rules, known pitfalls — **start here** |
-| [Design specs](docs/superpowers/specs/) | What to build, why, and what never to build |
-| [Master roadmap](docs/superpowers/plans/2026-08-08-master-roadmap.md) | Order of work, decision gates, risks |
-| [Design contract](docs/DESIGN.md) | How the UI looks and why |
-| [Reference map](docs/REFERENCES.md) | Which project to read for which component |
-| [Packaging & release](docs/打包与发布.md) | How to package and install on a fresh machine |
-| [Development history](docs/DEVELOPMENT_HISTORY.md) | Every change and its reason |
-
----
-
-## Acknowledgements
-
-These projects were studied during design. **Except `pi`, which is a dependency, all are read-only references — design was learned, code was not copied.**
-
-| Project | What we learned |
-|---|---|
-| [pi](https://github.com/earendil-works/pi) | agent loop and provider layer (used as a dependency) |
-| [Buzz](https://github.com/block/buzz) | process-group termination, context-recovery ladder, unified event stream, dual-protocol decoupling |
-| [pi-crew](https://github.com/baphuongna/pi-crew) | GreenLevel grading, verification-environment hygiene, worktree practice |
-| [ccb](https://github.com/SeemSeam/claude_codex_bridge) | provider adapter contract, completion contract |
-| hive | team panel interaction (visual reference only) |
-
----
-
-## License
-
-[GNU Affero General Public License v3.0 or later](LICENSE)
-
-```
-Copyright (C) 2026  DAWN Science contributors
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-```
-
-**Why AGPL**: this is an open-source tool for research, and we want improved versions to stay open for everyone — including versions offered as a network service. 
-
-Third-party dependencies (`pi` etc.) are MIT / Apache-2.0, compatible with AGPL.
-
----
-
-<div align="center">
-
-# 中文
-
-**Data Agent Workbench with Notebooks — for science.**
-
-开源的本地 AI 工作台：R 与 Python 数据科学，多智能体协作，面向科研。
-
-</div>
-
----
-
-## 这是什么
-
-一个**开源、本地优先的桌面科研工作环境**。你在里面和模型对话，模型在**同一台内核**里跑 Python / R——变量跨对话、跨重启保留；你可以在旁边的笔记本里接着敲，敲的记进对话。项目绑定文件夹，服务器只要一个 sshd 就能成为远端工作区。
-
-**设计理念：**
-
-```
-问题  →  规划  →  调用工具  →  执行流程  →  产生可追溯结果
-```
-
-最后一环是这个项目区别于其它 AI 工具的地方——**不是更快，是更可信**。
-
-**领域定位：** 数据科学 · 生态学 · 环境科学 · 生物信息
-
-<!-- TODO：放一张真实使用的截图 docs/screenshot.png -->
-
----
-
-## DAWN 是什么的缩写
-
-| | | |
-|---|---|---|
-| **D** | **Data** | 数据 |
-| **A** | **Agent** | 智能体 |
-| **W** | **Workbench** | 工作台 |
-| **N** | **Notebook** | 笔记本 |
-
-`Data`（缩写内）+ `Science`（产品名）合起来是**数据科学**；而 `Science` 同时把生态学、环境科学、生物信息一并包住。
-
----
-
-## 安装
-
-去 [Releases](https://github.com/Jiawang1209/DAWN-Science/releases) 下载对应平台的包。**当前是早期版本（0.0.x），安装包未签名**，第一次打开要多点一步：
-
-| 平台 | 安装 | 第一次打开 |
-|---|---|---|
-| macOS | 打开 `.dmg`，拖进 Applications | 右键 → 打开；macOS 15 起要去「系统设置 → 隐私与安全性」底部点「仍要打开」 |
-| Windows | 运行 `…-setup.exe`；或直接跑 `…-portable.exe` | SmartScreen：「更多信息 → 仍要运行」。**Windows 版尚未在真机上验证过**——哪里不对请反馈 |
-| Linux | `chmod +x *.AppImage && ./DAWN-Science-*.AppImage`；或 `sudo dpkg -i *.deb` | AppImage 需要 `sudo apt install libfuse2` |
-
-**第一次打开**是一个向导：选服务商（DeepSeek / Kimi / Qwen / Anthropic / OpenAI …）、填 API key，就能聊。同一屏可以「检测本机解释器」，从已有的 Python / R 里选一个接成内核——可选，不配也能聊。
-
-**软件本身不需要 Node.js。** 要用哪个功能才装哪样，缺了界面会明说：
-
-| 要做什么 | 要装 |
-|---|---|
-| 笔记本 / 跑 Python | Python 3 + `pip install ipykernel` |
-| R 内核 | R + `IRkernel` |
-| 项目的 git 事实 | git |
-| 远端工作区 | 服务器上只要 sshd，**服务器上不放任何文件** |
-| 借用 Claude Code / Codex 干活 | 自己装好对应 CLI（锦上添花，不装不影响对话） |
-
----
-
-## 有什么
-
-| | |
-|---|---|
-| **对话里的内核** | 模型调 `run_code`，你在坞里的「笔记本」格看它的每个 cell 流过；在同一台内核里自己敲，敲的记进对话 |
-| **持久内核** | 变量跨对话、跨重启保留，可中断；关掉对话，Python 里的 `df` 仍在 |
-| **远端工作区** | 加一台服务器（SSH），会话、内核、文件、终端都在那边跑；本机零依赖 |
-| **右侧坞** | 文件（本地/远端）、传输、笔记本、产物清单、网页预览、agent 浏览器旁观 |
-| **`@` 引用** | 输入框里 `@` 工作区文件——喂路径和类型，不喂内容 |
-| **多智能体** | 22 份自带子 agent 名册；团队模式：队长 + 可续聊成员 + 带依赖的任务板 |
-| **专业 Bot** | 坞中管理固定职责助手、按工作区直接交流；主对话自动从已配置 Bot 组队，`/` 随时派单；成员在同一团队对话中追问/交接，用户随时插话；独立头像、名字、专业角色及消息气泡展示交流，汇总已核验脚本、说明及图表，成果可在消息内展开预览并用 × 收起。首版支持 native/API，ACP/CLI 不作为 Bot 成员 |
-| **权限三档** | 全放行 / 问一句 / 拦下；硬拒清单 |
-| **技能与插件** | 技能三档开关、导入；Office（Word/Excel/PPT/PDF 14 工具）、浏览器（15 工具）、记忆（三轨确认制）插件 |
-| **远程助理** | 微信 / 飞书通道，扫码接入，手机上继续问 |
-| **定时任务** | 到点开一段全新会话跑任务说明 |
-| **产物** | 对话里 `GENERATED · N`，坞里实时清单 |
-| **多服务商** | 走 `pi` 的 provider 层，40+ 家；也可切到本机的 Claude Code / Codex（ACP） |
-| **外观** | 明暗主题、一键换主题色、中英文界面 |
-
----
-
-## 四个支柱
-
-### D · Data
-
-Python 与 R 持久内核（变量跨 cell、跨会话、跨重启保留，且**可中断**）· 数据库连接与 schema 浏览 · 产物 schema 标准化（表格附固定结构、图表附数据源与指标含义、模型附超参与评估指标）。
-
-### A · Agent
-
-能规划、调工具、执行、回报的 agent，而不只是聊天。默认走本地 agent loop 驱动任意 API 端点（DeepSeek / Kimi / Qwen 等），也可切换到本机安装的 Claude Code 或 Codex。MCP 工具网关 · Skills 渐进式加载 · **可选的多智能体编排模块**。
-
-### W · Workbench
-
-Project 绑定文件夹，配置、知识与内核都挂在 Project 上 · 本地 / WSL / SSH / GPU 执行环境 · 长任务的 Run 管理（提交前预检、心跳、有界日志、环境快照）。
-
-**关键结构：内核的生命周期长于会话。** 关掉一个对话，Python 里的 `df` 仍在。
-
-### N · Notebook
-
-对话、笔记本、并排——**是同一份 append-only Entry 序列的三种投影，不是三套实现**。`code_cell` 是一等公民：可重跑、可编辑、可导出 `.ipynb`，且人写的 cell 与 agent 写的同构。
-
----
-
-## 核心主张：可追溯
-
-系统把两类信息**分开建模**：
-
-| 层 | 内容 | 可信度 |
-|---|---|---|
-| **Agent 声明层** | agent 说自己做了什么 | 待验证 |
-| **Repo 事实层** | git diff、测试退出码、lint / build 结果 | 权威 |
-
-**状态推进必须由两者结合决定**，声明单独不足以推进：
-
-```
-agent 说「已完成实现」，但测试未通过        → 不得进入 DONE
-agent 说「已 review 完成」，但无 review 工件 → 不得完成交接
-agent 说「可合并」，但 diff 与计划不一致     → 回到 REWORKING
-```
-
----
-
-## 当前状态
-
-**早期版本，日常可用，接口仍在变。** 单机与远端主链路都跑通并在真机上验过；打包三平台，签名与自动更新还没有。
-
-| | |
-|---|---|
-| 源码 | 约 7.7 万行 TypeScript |
-| 测试 | 197 个单元/集成测试文件（vitest）+ 107 个 e2e 用例（Playwright，驱动真实构建产物）+ 10 张逐像素视觉基线 |
-| 变更记录 | [485 条](docs/DEVELOPMENT_HISTORY.md)，每条写明动机与验证方式 |
-| 下一步 | 签名与自动更新 · 产物的来源/版本/批注 |
-
----
+| 模型对话 | 在首次设置或设置页选择模型服务并填写相应凭证 |
+| Python 计算 | Python 3、`ipykernel`，以及研究所需的软件包 |
+| R 计算 | R、`IRkernel`，以及研究所需的软件包 |
+| SSH 工作区 | 服务器 SSH 访问权限；运行 Python / R 时，服务器仍需相应解释器、内核与软件包 |
+| 外部 Agent | 对应 CLI 或 ACP 适配器及其自己的认证配置 |
+| 案例检索 | 单独配置 MLAI-science MCP 服务 |
 
 ## 从源码运行
 
-需要 Node.js ≥ 22。
+需要 Node.js ≥ 22 与 npm。Linux 上部分原生模块还需要编译工具和 Python，详见[打包文档](docs/打包与发布.md)。
 
 ```bash
-git clone https://github.com/Jiawang1209/DAWN-Science.git
-cd DAWN-Science
+git clone https://github.com/Jiawang1209/EcoAI-Science.git
+cd EcoAI-Science
 npm ci
-cp .env.example .env        # 填你的 API key（也可以不填，首启向导里填）
-npm run app                 # 构建并启动
+npm run app
 ```
 
-开发：
+首次启动可在界面中配置模型与解释器，无需先把真实凭证写进仓库。
+
+常用开发命令：
 
 ```bash
-npm run dev:mock            # 真链路 + 假模型，隔离目录，不碰真实凭证
-npm test                    # 单元 + 集成
-npm run test:e2e            # 先 build，再 Playwright 跑真实产物
-npm run dist                # 打当前平台的安装包，产物在 release/
+npm run dev:mock       # 隔离数据目录，真实应用链路与确定性模型替身
+npm run typecheck     # 类型检查
+npm test              # 单元与集成测试
+npm run build         # 构建桌面主进程、CLI 与界面
+npm run test:e2e      # 构建后运行 Electron 测试
+npm run dist          # 为当前平台打包到 release/
 ```
 
-命令行 Agent（源码版）：
+命令行 Agent：
 
 ```bash
 npm run build:cli
-./bin/dawn --help
-# 设置 DAWN_CONFIG 和所用服务的 API key 环境变量后：
-./bin/dawn
+./bin/ecoai --help
+./bin/ecoai
 ```
 
-Normal 就是原来的 Shell；输入 `dawn` 进入 Agent，`/exit` 返回。CLI 使用独立数据目录和环境凭证，详见[配置与使用](docs/CLI.md)。
+为兼容已有项目，内部协议、`.dawn` 工作区目录、`DAWN_*` 环境变量和原 `dawn` 命令别名继续保留。打包版沿用既有数据目录，品牌替换不会自动搬移或清理历史会话与配置。CLI 配置方式见 [CLI 文档](docs/CLI.md)。
 
-打包细节（交叉打包能不能、Linux 要装什么）见 [打包与发布](docs/打包与发布.md)。
+## 能力边界
 
----
+- **本地工作台不代表离线模型。** 是否联网取决于你选择的模型、检索服务和工具；发送给服务的内容取决于当前任务与工具调用。
+- **内核保持运行时，变量可以跨代码单元和会话使用。** 应用退出、内核退出或机器重启后，不承诺自动恢复内存中的变量。
+- **工具权限控制不等同于操作系统沙箱。** 执行范围仍需要结合工作目录、账户权限和实际工具判断。
+- **API、外部 CLI 和 ACP 的能力不同。** 内置科研插件不会自动为外部运行时增加同样的工具。
+- **文献索引不等于全文证据。** 扫描 PDF 不承诺 OCR；元数据查询也不等于已下载或分析原始科研数据。
+- **测试、来源记录与科学正确性分别判断。** 完整输入来源链和产物版本管理仍在完善；代码成功运行或文件通过比较，不能替代研究者对实验设计、统计方法与结论的审查。
 
-## 技术栈
+## 使用文档
 
-| 层 | 选型 |
+| 文档 | 内容 |
 |---|---|
-| 核心 | TypeScript / Node |
-| LLM provider | `@earendil-works/pi-ai`（40+ provider，含 DeepSeek / Kimi / Qwen 原生） |
-| Agent loop | `@earendil-works/pi-agent-core` |
-| 科学内核 | `enchannel-zmq-backend` + `@nteract/messaging` + `spawnteract`（Jupyter 协议，一套通吃 R 与 Python） |
-| 终端 | `node-pty` + `xterm.js` |
-| 工具协议 | `@modelcontextprotocol/sdk`（server + client 双向） |
-| 持久化 | SQLite（`better-sqlite3`，WAL） |
-| 桌面壳 | Electron |
-| 前端 | React + Vite · CodeMirror 6 · Plotly.js · TanStack Table |
+| [文献调研](docs/文献调研-怎么用.md) | 多论文精读、证据与对照表 |
+| [科研文献](docs/科研文献-怎么用.md) | OpenAlex / Crossref 检索与清单保存 |
+| [科研数据](docs/科研数据-怎么用.md) | GEO / SRA / UniProt 查询与保存 |
+| [案例与绘图](docs/照着文献画图-怎么装.md) | 配置 MLAI-science 案例检索 |
+| [CLI](docs/CLI.md) | 命令行 Agent、配置与历史恢复 |
+| [打包与发布](docs/打包与发布.md) | 安装包、平台依赖与发布流程 |
+| [项目约定](CLAUDE.md) | 开发入口与验证规则 |
+| [开发历史](docs/DEVELOPMENT_HISTORY.md) | 功能变更与验证记录 |
 
----
+部分历史文档沿用 DAWN 名称，保留其原始设计与开发背景；当前项目与完整品牌名称为 EcoAI-Science，简称 EcoAI。
 
-## 文档
+## Logo 与品牌资源
 
-| 文档 | 回答什么 |
-|---|---|
-| [CLAUDE.md](CLAUDE.md) | 每个功能的规格在哪、三条准入规则、容易踩的坑——**先看这个** |
-| [设计规格](docs/superpowers/specs/) | 建什么、为什么、什么绝不做 |
-| [主开发规划](docs/superpowers/plans/2026-08-08-master-roadmap.md) | 按什么顺序、在哪停下判断、风险怎么应对 |
-| [视觉与交互契约](docs/DESIGN.md) | 界面怎么长、为什么 |
-| [参考地图](docs/REFERENCES.md) | 实现某个部件时，去读哪个项目的哪一段 |
-| [打包与发布](docs/打包与发布.md) | 怎么打包、装到新电脑 |
-| [开发历史](docs/DEVELOPMENT_HISTORY.md) | 每次变更与其理由 |
+本项目使用作者提供、经细化后适配应用的 EcoAI 三叶 Logo。完整标识保留三片绿叶、金色弧线和 EcoAI 字样；App 内的小尺寸图标使用三叶标识，顶栏显示完整名称 **EcoAI-Science**。
 
----
+[完整 Logo（透明 PNG）](packaging/brand/ecoai-logo.png) · [三叶标识（透明 PNG）](packaging/brand/ecoai-mark.png) · [App 图标](packaging/icon.png) · [资源来源与生成说明](packaging/brand/README.md)
 
-## 致谢
+## 技术基础与致谢
 
-设计过程中研读了以下项目。**除 `pi` 作为依赖外，其余均为只读参考——学设计，不复制代码。**
+EcoAI 采用 TypeScript / Node.js、Electron、React / Vite、SQLite、Jupyter 协议、SSH 与 MCP 构建。模型和 Agent 能力建立在 `pi` 运行依赖之上。
 
-| 项目 | 借鉴内容 |
-|---|---|
-| [pi](https://github.com/earendil-works/pi) | agent loop 与 provider 层（作为依赖使用） |
-| [Buzz](https://github.com/block/buzz) | 进程组终止、上下文恢复阶梯、统一事件流、双协议解耦 |
-| [pi-crew](https://github.com/baphuongna/pi-crew) | GreenLevel 分级、验证环境净化、worktree 实战细节 |
-| [ccb](https://github.com/SeemSeam/claude_codex_bridge) | provider 适配契约、completion contract |
-| hive | team 面板交互（仅视觉参考） |
+感谢 [DAWN-Science](https://github.com/Jiawang1209/DAWN-Science) 提供代码与设计基础。EcoAI 作为其面向生态学研究的姐妹产品，继续保留来源、原有贡献与开发历史。其他设计参考见 [参考项目说明](docs/REFERENCES.md)。
 
----
+## 许可证
 
-## 许可
-
-[GNU Affero General Public License v3.0 or later](LICENSE)
-
-```
-Copyright (C) 2026  DAWN Science contributors
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-```
-
-**选择 AGPL 的理由**：这是一个面向科研的开源工具，我们希望它的改进版本同样对所有人开放——包括以网络服务形式提供的版本。
-
-依赖的第三方库（`pi` 等）为 MIT / Apache-2.0，与 AGPL 兼容。
+[AGPL-3.0-or-later](LICENSE)。使用、修改和分发时，请保留原有版权、许可证与来源说明，并遵守相应开源义务。

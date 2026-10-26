@@ -233,7 +233,7 @@ export function buildCommands(ctx: CommandContext): Command[] {
     : ctx.session.kind === "kernel" || ctx.session.kind === "pty"
       ? t("这段不是和模型的对话，没有先出方案")
       : ctx.session.kind !== "native"
-        ? t("这个 agent 不归 DAWN 管工具，先出方案用不了")
+        ? t("这个 agent 不归 EcoAI 管工具，先出方案用不了")
         : ctx.plan?.unavailable
   out.push({
     id: "session.plan",
@@ -286,7 +286,7 @@ export function buildCommands(ctx: CommandContext): Command[] {
     : ctx.session.kind === "kernel" || ctx.session.kind === "pty"
       ? t("这段不是和模型的对话，没有上下文可压")
       : ctx.session.kind !== "native"
-        ? t("外部 agent 自己管上下文，DAWN 压不了")
+        ? t("外部 agent 自己管上下文，EcoAI 压不了")
         : ctx.busy
           ? t("这一轮还在跑，做完再压缩")
           : undefined

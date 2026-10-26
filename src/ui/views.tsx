@@ -20,7 +20,7 @@ import type { QuestionAnswer } from "../protocol/index.js"
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { dockTabOrder, useDockTabs } from "./dock-tabs.js"
-import rpIcon from "../../packaging/icon.svg"
+import ecoaiIcon from "../../packaging/brand/ecoai-mark.png"
 import { buildServerGroups } from "./server-navigation.js"
 import { ServerSidebar, type ServerSidebarProps } from "./server-sidebar.js"
 import { ProjectActions } from "./project-actions.js"
@@ -4706,7 +4706,7 @@ export function ConversationView({
    */
   const 方案不能 =
     session.kind !== "native"
-      ? t("这个 agent 不归 DAWN 管工具，先出方案用不了")
+      ? t("这个 agent 不归 EcoAI 管工具，先出方案用不了")
       : !方案开关
         ? t("这段会话还没准备好先出方案，稍等再试")
         : undefined
@@ -7292,7 +7292,7 @@ export function EmptyConversation({
     <div className="conversation empty-conv">
       {first ? (
         <div className="welcome">
-          <img className="welcome-mark" src={rpIcon} alt="" aria-hidden="true" />
+          <img className="welcome-mark" src={ecoaiIcon} alt="" aria-hidden="true" />
           <h2 className="welcome-title">{t("今天想分析什么？")}</h2>
           <p className="welcome-sub">{t("直接输入问题，按需选择本机文件夹。")}</p>
 

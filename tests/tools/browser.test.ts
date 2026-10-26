@@ -28,7 +28,7 @@ describe("浏览器插件", () => {
     expect(插件册[1]!.族们().reduce((n, f) => n + f.tools.length, 0)).toBe(15)
   })
 
-  it("清截图：只清 DAWN 自己(时间戳命名)的过老截图；用户放的 png 与新截图都活着(审查 debug E9)", () => {
+  it("清截图：只清 EcoAI 自己(时间戳命名)的过老截图；用户放的 png 与新截图都活着(审查 debug E9)", () => {
     const d = mkdtempSync(join(tmpdir(), "dawn-shot-"))
     const 老时 = (Date.now() - 8 * 24 * 3600 * 1000) / 1000
     // DAWN 自己的截图(名字是时间戳形状),过老 → 该删
@@ -43,7 +43,7 @@ describe("浏览器插件", () => {
     utimesSync(用户图, 老时, 老时)
     writeFileSync(join(d, "别人的.txt"), "留着")
     const 删了 = 清截图(d)
-    expect(删了).toBe(1) // 只删了那张过老的 DAWN 截图
+    expect(删了).toBe(1) // 只删了那张过老的 EcoAI 截图
     expect(readdirSync(d).sort()).toEqual(
       ["2026-08-25T12-00-00-000Z.png", "别人的.txt", "重要.png"].sort(),
     )

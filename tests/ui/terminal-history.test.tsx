@@ -10,7 +10,7 @@ function mount() {
 }
 it('keeps mode switching and return available without the removed history toolbar entry', async () => {
   const get = mount()
-  const agent = screen.getByRole('button', { name: 'DAWN 模式' })
+  const agent = screen.getByRole('button', { name: 'EcoAI 模式' })
   await waitFor(() => expect((agent as HTMLButtonElement).disabled).toBe(false))
   expect(screen.queryByRole('button', { name: '接续旧对话' })).toBeNull()
   expect(screen.queryByRole('dialog')).toBeNull()

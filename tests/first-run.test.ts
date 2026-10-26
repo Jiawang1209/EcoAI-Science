@@ -175,7 +175,7 @@ describe("默认配置的形状（①-C · C5）", () => {
    *
    * 现在默认配置仍然不写 models，但理由变了：**不是「不知道」，是「会自己去读」。**
    */
-  it("**codex 不写清单** —— 它由 DAWN 自动发现，不该手写", () => {
+  it("**codex 不写清单** —— 它由 EcoAI 自动发现，不该手写", () => {
     const a = parsed().agents["codex"] as { models?: string[] }
     expect(a.models).toBeUndefined()
     // 注释里要说清「不写 models 不是漏了，是它会自己读」

@@ -26,6 +26,9 @@ import { 本机机器id } from "../update/机器id.js"
 import { 托盘图标 } from "./tray-icon.js"
 import { CHILD_ENTRY } from "../subagent/protocol.js"
 import { acquireDatabaseInstance } from "./single-instance.js"
+import { applyProductIdentity } from "./product-identity.js"
+
+const showProductName = applyProductIdentity(app)
 
 /**
  * 配置落在 `userData`，**不是 `process.cwd()`**。
@@ -214,7 +217,7 @@ process.on("uncaughtException", (e) => {
   }
   正在处理未接住的异常 = true
   try {
-    dialog.showErrorBox(主窗口已加载 ? "DAWN 内部错误" : "DAWN 启动失败", `${msg}\n\n日志：${启动日志路径}`)
+    dialog.showErrorBox(主窗口已加载 ? "EcoAI 内部错误" : "EcoAI 启动失败", `${msg}\n\n日志：${启动日志路径}`)
   } catch {
     /* dialog 在 ready 之前可能不可用 */
   }
@@ -250,12 +253,12 @@ function 创建托盘(): void {
   const 图 = nativeImage.createFromDataURL(托盘图标).resize({ width: process.platform === "darwin" ? 18 : 32, height: process.platform === "darwin" ? 18 : 32 })
   if (process.platform === "darwin") 图.setTemplateImage(true)
   托盘 = new Tray(图)
-  托盘.setToolTip("DAWN Science")
+  托盘.setToolTip("EcoAI")
   const 菜单 = Menu.buildFromTemplate([
     { label: "显示主窗口", click: () => { 显示主窗口() } },
     { label: "新建会话", click: () => { 显示主窗口()?.webContents.send("dawn:tray-new-task") } },
     { type: "separator" },
-    { label: "退出 DAWN Science", click: () => app.quit() },
+    { label: "退出 EcoAI", click: () => app.quit() },
   ])
   托盘.on("right-click", () => 托盘?.popUpContextMenu(菜单))
   托盘.on("click", () => {
@@ -626,6 +629,7 @@ function 补登录shell的PATH(): void {
 }
 
 app.whenReady().then(() => {
+  showProductName()
   启动日志("app ready")
   补登录shell的PATH()
   打包版首启迁移()
@@ -902,7 +906,7 @@ app.whenReady().then(() => {
     启动日志(`后端装配失败：${message}（配置文件：${CONFIG}）`)
     console.error(`[启动失败] ${message}（配置文件：${CONFIG}）`)
     后端就绪()
-    dialog.showErrorBox("DAWN 启动失败", `${message}\n\n配置文件：${CONFIG}`)
+    dialog.showErrorBox("EcoAI 启动失败", `${message}\n\n配置文件：${CONFIG}`)
     app.exit(1)
     return
   }

@@ -1860,7 +1860,7 @@ export function AcpPanel({
     <section className="settings-section">
       <p className="hint">
         {t(
-          "ACP 适配器是一个独立进程，DAWN 通过 Agent Client Protocol 跟它说话。它会主动问你要不要允许某次工具调用，所以这类会话里会多一张权限卡。",
+          "ACP 适配器是一个独立进程，EcoAI 通过 Agent Client Protocol 跟它说话。它会主动问你要不要允许某次工具调用，所以这类会话里会多一张权限卡。",
         )}
       </p>
 

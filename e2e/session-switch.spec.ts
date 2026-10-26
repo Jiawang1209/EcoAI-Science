@@ -85,7 +85,7 @@ test("切会话不重启 shell —— 侧栏与顶栏一直在", async ({ dawn }
   await newSession(page)
   await oldest(page).click()
   // re-home 不是 reboot：外壳自始至终没被换掉
-  await expect(page.locator(".brand")).toHaveText("DAWN Science")
+  await expect(page.locator(".brand")).toHaveText("EcoAI")
   await expect(page.locator(".sidebar")).toBeVisible()
   await expect(page.locator(".boot-overlay")).toHaveCount(0)
 })

@@ -35,7 +35,7 @@ export async function 下载到({ 资源, 目录, 进度, signal, fetch: 取 = f
   // 上一次留下的（成功的或半截的）一律先清掉：这一次要下的东西自己说了算
   await rm(落点, { force: true })
 
-  const r = await 取(资源.url, { signal, headers: { "user-agent": "DAWN-Science" } })
+  const r = await 取(资源.url, { signal, headers: { "user-agent": "EcoAI" } })
   if (!r.ok) throw new Error(`下载失败：服务器回了 ${r.status}`)
   if (!r.body) throw new Error("下载失败：服务器没给内容")
 

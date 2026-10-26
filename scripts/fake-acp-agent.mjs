@@ -38,7 +38,7 @@
  */
 
 /** **刻意包含一句可断言的暗号**，e2e 靠它判断整条链通了 */
-export const FAKE_ACP_REPLY = "假 ACP agent 已应答：DAWN 的 ACP 链路是通的。"
+export const FAKE_ACP_REPLY = "假 ACP agent 已应答：EcoAI 的 ACP 链路是通的。"
 
 const 回话 = process.env["FAKE_ACP_REPLY"] ?? FAKE_ACP_REPLY
 const 段间隔 = Number(process.env["FAKE_ACP_CHUNK_DELAY_MS"] ?? "0")

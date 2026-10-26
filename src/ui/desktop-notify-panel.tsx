@@ -106,7 +106,7 @@ export function DesktopNotifyPanel({
           size="sm"
           onClick={() => {
             test()
-              .then((r) => 设试过(r.shown ? t("已发出——没看到的话，去系统设置的「通知」里允许 DAWN Science。") : tf("没弹出来：{0}", 没弹的缘故(r.reason))))
+              .then((r) => 设试过(r.shown ? t("已发出——没看到的话，去系统设置的「通知」里允许 EcoAI。") : tf("没弹出来：{0}", 没弹的缘故(r.reason))))
               .catch((e: unknown) => 设试过(e instanceof Error ? e.message : String(e)))
           }}
         >

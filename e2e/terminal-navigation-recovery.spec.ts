@@ -18,8 +18,8 @@ async function legacy(page: Page, options: { agent?: boolean; ownerArchived?: bo
     await page.locator('.composer-card .attach-trigger').click()
     await page.getByRole('menuitem', { name: '终端面板', exact: true }).click()
     if (options.agent) {
-      await page.getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-      await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+      await page.getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+      await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
     } else {
       await page.locator('.dock .xterm-helper-textarea').focus(); await page.keyboard.type('exit'); await page.keyboard.press('Enter')
       await expect(page.locator('.dock')).toContainText('已结束')
@@ -40,14 +40,14 @@ async function legacy(page: Page, options: { agent?: boolean; ownerArchived?: bo
   return { ...target, agentSession: mode.sessionId as string | undefined }
 }
 
-test('PTYs never appear in conversation tabs, including after returning from DAWN', async ({ dawn }) => {
+test('PTYs never appear in conversation tabs, including after returning from EcoAI', async ({ dawn }) => {
   const { page } = dawn, target = await setup(page)
   await expect(page.locator(`.session-tab[data-session="${target.terminalId}"]`)).toHaveCount(0)
   await expect(page.getByRole('tablist', { name: '同一处的会话' }).getByRole('tab')).toHaveCount(1)
   await page.locator('.composer-card .attach-trigger').click()
   await page.getByRole('menuitem', { name: '终端面板', exact: true }).click()
-  await page.getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await page.locator('.dock').getByRole('button', { name: '返回会话', exact: true }).click()
   await expect(page.locator(`.session-tab[data-session="${target.terminalId}"]`)).toHaveCount(0)
   await expect(page.getByRole('tablist', { name: '同一处的会话' }).getByRole('tab')).toHaveCount(2)
@@ -108,7 +108,7 @@ test('closing the selected legacy terminal leaves a real page instead of a delet
   await expect(page.locator('.session-tab[aria-selected="true"]')).toHaveAttribute('data-session', target.owner)
 })
 
-test('the legacy DAWN page returns directly to its own Agent conversation', async ({ dawn }) => {
+test('the legacy EcoAI page returns directly to its own Agent conversation', async ({ dawn }) => {
   const { page } = dawn, target = await legacy(page, { agent: true })
   await expect(page.locator('.main').getByRole('button', { name: '返回会话', exact: true })).toHaveCount(1)
   await page.locator('.main').getByRole('button', { name: '返回会话', exact: true }).click()
@@ -128,7 +128,7 @@ test('reopening an exited legacy PTY shows that same ended record without creati
   await expect(page.locator('.main').getByRole('button', { name: '打开终端', exact: true })).toHaveCount(1)
   await page.locator('.main').getByRole('button', { name: '打开终端', exact: true }).click()
   await expect(page.locator('.dock')).toContainText('已结束')
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toBeDisabled()
   const ptys = await page.evaluate(async () => {
     const projects = (await window.dawn!.invoke('listProjects', {}) as any).data
     const all = (await Promise.all(projects.map(async (p: any) => (await window.dawn!.invoke('listSessions', { projectId: p.projectId }) as any).data))).flat()

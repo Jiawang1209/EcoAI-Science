@@ -8,6 +8,42 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-26 — 将品牌、Logo 与双语 README 落地到实际主目录
+
+- **Type**: fix / integration
+- **What**: 修正改动此前仅保留在独立工作树的问题；将完整已授权变更同步到 /Users/liuyue/Desktop/Github_repos/EcoAI-Science，包含中英文 README、新 Logo、截图、App 品牌及对应检查。主目录原先干净且与工作树同基线，初次同步的 170 个文件内容一致。
+- **Verification**: 在主目录重新通过类型检查、完整构建、28 项身份/凭证测试和 19/19 真实 Electron 检查（含 14 张视觉基线）。固定启动器已从主目录启动，页面和图片 URL 均指向主目录，实际显示新 Logo 与 EcoAI-Science。
+- **Impact**: 当前日常项目目录已更新；所有变更保留为 main 上的未提交修改，未推送、发布或替换安装版。此前记录中的“仅在独立工作树”描述是历史状态。
+
+### 2026-10-26 — 中英文 README 与 Logo 展示同步
+
+- **Type**: docs
+- **What**: 更新中文 README，新增 README.en.md 英文版；两版页首使用同一完整 EcoAI Logo、EcoAI-Science 标题、语言切换链接和真实 App 首页截图，加入品牌资源入口。同步生态学定位、13 项能力、使用准备、运行方式、能力边界、DAWN-Science 姐妹产品署名及许可证。
+- **Verification**: 两版各 22 个本地链接/锚点均有效，均含 13 项能力与 12 个标题段落；Logo 和截图引用一致，代码围栏完整，git diff --check 通过。证据见 readme-bilingual-check.json。
+- **Impact**: 仅文档；仍位于 codex/ecoai-brand 独立工作树，未提交、合并或推送。
+
+### 2026-10-26 — EcoAI 三叶 Logo 细化与接入
+
+- **Type**: feat / assets / docs
+- **What**: 依据用户提供图像去除水印并细化绿色三叶 Logo，保留原图，增加完整透明版和小尺寸标识。替换顶栏、欢迎页、主助手头像、安装包与托盘图标；图标生成脚本使用新母图，README 增加 Logo 并更新实际主页截图。
+- **Verification**: 图标生成、类型及完整构建通过；相关 Electron 和基线更新 19/19 通过，14 张视觉基线目视检查后无更新复验 14/14 通过；真实预览加载新 Logo 且无横向溢出。
+- **Impact**: 资源与提示词见 packaging/brand/README.md；变更保留在 codex/ecoai-brand，尚未提交、合并、推送或替换安装版。
+
+### 2026-10-26 — 左上角使用 EcoAI-Science 完整名称
+
+- **Type**: fix
+- **What**: 根据用户补充要求，将左上角导航品牌改为 EcoAI-Science，并更新真实预览及 README 首页截图；保留原字号和按钮间距。
+- **Verification**: UI 构建成功，相关 Electron 检查 9/9 通过；实际预览文字单行且无横向溢出。
+- **Impact**: 仅修正导航显示与对应测试、截图；新 Logo 仍待用户提供。
+
+### 2026-10-26 — EcoAI 品牌与生态学研究工作台介绍
+
+- **Type**: feat / docs
+- **Motivation**: 统一 EcoAI-Science 仓库与 App 的对外名称，并清晰介绍生态学研究定位及与 DAWN-Science 的姐妹产品关系。
+- **What**: 替换 App 中英文品牌文案、托盘/通知/终端与发布元数据，新增 ecoai 命令并保留旧别名；保留数据目录、内部协议与初始化加密身份。重写 README 并加入真实 Electron 主页截图，Logo 由用户后续提供。
+- **Verification**: 全量既有 518 文件 5471 项通过/10 原有跳过；最终身份与凭证相关 33 项、真实 Electron 19/19、类型与构建通过。固定原生预览主页与关于页检查通过，配置与凭证哈希及历史记录数不变。见 docs/reviews/2026-10-26-ecoai-brand-verification.md。
+- **Impact**: 独立 codex/ecoai-brand 工作树内待用户 Logo；尚未提交或合并 main，未推送、发布或替换安装版。
+
 ### 2026-10-25 — 文献对照本地 main 收尾验收
 
 - **Type**: docs

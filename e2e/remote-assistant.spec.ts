@@ -21,7 +21,7 @@ test("**扫码绑定 → 微信说话 → 回答回到微信 → 失效要出声
   const 卡 = page.locator(".ra-card").first()
   await expect(卡.locator(".ra-state")).toHaveText("未绑定")
   // 名字是微信定的，改不了——页面上说实话、给备注建议
-  await expect(page.getByText(/设个备注/)).toContainText("DAWN-Science")
+  await expect(page.getByText(/设个备注/)).toContainText("EcoAI")
 
   // ② 扫码：二维码画出来了；每一态都出声
   await 卡.getByRole("button", { name: "扫码绑定" }).click()

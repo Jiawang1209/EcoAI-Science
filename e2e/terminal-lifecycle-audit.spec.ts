@@ -76,13 +76,13 @@ for (const scope of ['welcome', 'conversation'] as const) {
   })
 }
 
-test('closing the last DAWN terminal preserves its conversation; a new Agent is separate and the original GUI can continue', async ({ dawn }) => {
+test('closing the last EcoAI terminal preserves its conversation; a new Agent is separate and the original GUI can continue', async ({ dawn }) => {
   const { page } = dawn
   await 在项目里开会话(page); await 等进了对话(page)
   await open(page)
   const terminalId = (await ptys(page))[0]!.sessionId
-  await page.getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const state = await page.evaluate(async id => (await window.dawn!.invoke('getTerminalAgentMode', { terminalId: id }) as any).data, terminalId)
   await type(page, 'LIFECYCLE_AGENT_CONTEXT_KEEP')
   await expect.poll(async () => page.evaluate(async id => {
@@ -95,7 +95,7 @@ test('closing the last DAWN terminal preserves its conversation; a new Agent is 
   // Reopen through the Agent conversation, then close its only PTY.
   await page.locator('.composer-card .attach-trigger').click()
   await page.getByRole('menuitem', { name: '终端面板', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
   expect((await ptys(page)).map(t => t.sessionId)).toEqual([terminalId])
   await closed(page, terminalId); await back(page)
   await expect(page.locator('.session-tab[aria-selected="true"]')).toHaveAttribute('data-session', state.sessionId)
@@ -112,8 +112,8 @@ test('closing the last DAWN terminal preserves its conversation; a new Agent is 
   await open(page)
   const nextId = (await ptys(page))[0]!.sessionId
   expect(nextId).not.toBe(terminalId)
-  await page.getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const next = await page.evaluate(async id => (await window.dawn!.invoke('getTerminalAgentMode', { terminalId: id }) as any).data, nextId)
   // A new CLI invocation is a new conversation by the existing contract.
   expect(next.sessionId).not.toBe(state.sessionId)
@@ -159,7 +159,7 @@ test('an ended sibling remains selectable after closing the live terminal and ca
   await page.getByRole('button', { name: '关闭终端 2', exact: true }).click()
   await expect(page.locator('.dock-tab')).toHaveCount(1)
   await page.getByRole('button', { name: '终端 1 已结束', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toBeDisabled()
   await back(page)
   await page.locator('.composer-card .attach-trigger').click()
   await page.getByRole('menuitem', { name: '终端面板', exact: true }).click()

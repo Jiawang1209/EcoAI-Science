@@ -28,7 +28,7 @@ const env={...process.env,...(process.env.REHEARSE_REAL_HOME==="1"?{}:{HOME:home
 // 回车还会把它提交掉。2026-08-28 追了半天的「key 被清空」就是这个，不是应用的 bug。
 env.DAWN_HIDE_WINDOW="1"
 const t0=Date.now(); let n=0; const shots=[]
-const app=await _electron.launch({executablePath:join(ROOT,"release/mac-arm64/DAWN Science.app/Contents/MacOS/DAWN Science"),args:[`--user-data-dir=${ud}`],env})
+const app=await _electron.launch({executablePath:join(ROOT,"release/mac-arm64/EcoAI.app/Contents/MacOS/EcoAI"),args:[`--user-data-dir=${ud}`],env})
 const page=await app.firstWindow(); const errs=[];  page.on("pageerror",e=>errs.push(e.message.slice(0,200))); page.on("console",m=>{ if(m.type()==="error") errs.push(m.text().slice(0,200)) })
 const shot=async(名)=>{ const p=join(home,`${++n}-${名}.png`); await page.screenshot({path:p}); shots.push(p) }
 // 失败要记下来、最后让进程退 1——此前 ✗ 只是打印，`npm run rehearse:fresh` 永远退 0，什么都门禁不了（2026-09-01 审查抓的）
@@ -58,6 +58,6 @@ try{
 } finally { await app.close().catch(()=>{}) }
 console.log("[startup.log]\n"+readFileSync(join(ud,"startup.log"),"utf8").split("\n").map(l=>"  "+l.slice(11,23)+" "+l.slice(25)).join("\n"))
 console.log("[渲染错误]", errs.length? "\n  "+[...new Set(errs)].slice(0,8).join("\n  "):"无")
-console.log("[~/DAWN]", existsSync(join(home,"DAWN"))?readdirSync(join(home,"DAWN")).join(", "):"(没有)")
+console.log("[~/DAWN]", existsSync(join(home,"EcoAI"))?readdirSync(join(home,"EcoAI")).join(", "):"(没有)")
 console.log("[截图]\n  "+shots.join("\n  "))
 if(失败.length){ console.log(`\n${失败.length} 项没过：${失败.join("；")}`); process.exitCode=1 } else console.log("\n全部通过")

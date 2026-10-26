@@ -120,7 +120,7 @@ describe("会话文件读回的上限（2026-09-27 审查）", () => {
 })
 
 describe("重开后补 chip 组", () => {
-  it("每条 subagent 工具行后面按盘上的 meta 插一组；DAWN 关掉时还在跑的记成失败并说清楚", () => {
+  it("每条 subagent 工具行后面按盘上的 meta 插一组；EcoAI 关掉时还在跑的记成失败并说清楚", () => {
     const s = 临时()
     写元(子运行目录(s, "c1", 0), { agent: "scout", task: "t0", status: "ok", startedAt: 1, endedAt: 2 })
     写元(子运行目录(s, "c1", 1), { agent: "planner", task: "t1", status: "running", startedAt: 1 })
@@ -135,7 +135,7 @@ describe("重开后补 chip 组", () => {
     const 组 = 出[2]
     expect(组?.type === "subagents" ? 组.agents : undefined).toEqual([
       { index: 0, agent: "scout", task: "t0", status: "ok" },
-      { index: 1, agent: "planner", task: "t1", status: "error", error: "DAWN 关掉时它还在跑，没有跑完" },
+      { index: 1, agent: "planner", task: "t1", status: "error", error: "EcoAI 关掉时它还在跑，没有跑完" },
     ])
   })
   it("meta.json 坏了（写到一半被杀）：照样占一颗 chip、说读不出来，不悄悄丢", () => {

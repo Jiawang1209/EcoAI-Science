@@ -10,22 +10,22 @@ import { 挑资源, type 平台事实, type 资源一个 } from "../../src/updat
 
 /** v0.0.2 Release 上真实的十个资源（名字与顺序原样） */
 const 十个: 资源一个[] = [
-  "DAWN-Science-0.0.3-linux-amd64.deb",
-  "DAWN-Science-0.0.3-linux-arm64.AppImage",
-  "DAWN-Science-0.0.3-linux-arm64.deb",
-  "DAWN-Science-0.0.3-linux-x86_64.AppImage",
-  "DAWN-Science-0.0.3-mac-arm64.dmg",
-  "DAWN-Science-0.0.3-mac-arm64.zip",
-  "DAWN-Science-0.0.3-mac-x64.dmg",
-  "DAWN-Science-0.0.3-mac-x64.zip",
-  "DAWN-Science-0.0.3-win-x64-portable.exe",
-  "DAWN-Science-0.0.3-win-x64.exe",
+  "EcoAI-Science-0.0.3-linux-amd64.deb",
+  "EcoAI-Science-0.0.3-linux-arm64.AppImage",
+  "EcoAI-Science-0.0.3-linux-arm64.deb",
+  "EcoAI-Science-0.0.3-linux-x86_64.AppImage",
+  "EcoAI-Science-0.0.3-mac-arm64.dmg",
+  "EcoAI-Science-0.0.3-mac-arm64.zip",
+  "EcoAI-Science-0.0.3-mac-x64.dmg",
+  "EcoAI-Science-0.0.3-mac-x64.zip",
+  "EcoAI-Science-0.0.3-win-x64-portable.exe",
+  "EcoAI-Science-0.0.3-win-x64.exe",
 ].map((name, i) => ({ name, size: 1000 + i, url: `https://example.invalid/${name}` }))
 
 const 事实 = (p: Partial<平台事实>): 平台事实 => ({
   platform: "darwin",
   arch: "arm64",
-  appPath: "/Applications/DAWN Science.app",
+  appPath: "/Applications/EcoAI.app",
   可写: () => true,
   ...p,
 })
@@ -33,12 +33,12 @@ const 事实 = (p: Partial<平台事实>): 平台事实 => ({
 describe("mac", () => {
   it("arm64 挑 zip 而不是 dmg——dmg 要人拖，zip 我们能自己解", () => {
     const r = 挑资源(十个, 事实({ platform: "darwin", arch: "arm64" }))
-    expect(r.能自装 && r.资源.name).toBe("DAWN-Science-0.0.3-mac-arm64.zip")
+    expect(r.能自装 && r.资源.name).toBe("EcoAI-Science-0.0.3-mac-arm64.zip")
     expect(r.能自装 && r.方式).toBe("mac-zip")
   })
   it("x64 挑 x64 那份——挑错架构的包装上去就起不来了", () => {
     const r = 挑资源(十个, 事实({ platform: "darwin", arch: "x64" }))
-    expect(r.能自装 && r.资源.name).toBe("DAWN-Science-0.0.3-mac-x64.zip")
+    expect(r.能自装 && r.资源.name).toBe("EcoAI-Science-0.0.3-mac-x64.zip")
   })
   it("开发模式（没有 .app）→ 说的是开发模式，不是「没有权限」", () => {
     // 报成「没有写权限」会把人送去 chmod 一个不存在的东西（2026-09-06 探针里真看到过这句）
@@ -57,7 +57,7 @@ describe("mac", () => {
 describe("windows", () => {
   it("安装版挑 nsis 那个 exe，不是 portable", () => {
     const r = 挑资源(十个, 事实({ platform: "win32", arch: "x64", appPath: "C:\\x\\DAWN.exe" }))
-    expect(r.能自装 && r.资源.name).toBe("DAWN-Science-0.0.3-win-x64.exe")
+    expect(r.能自装 && r.资源.name).toBe("EcoAI-Science-0.0.3-win-x64.exe")
     expect(r.能自装 && r.方式).toBe("win-nsis")
   })
   it("便携版换不了自己（运行中的 exe 被系统锁着）", () => {
@@ -76,7 +76,7 @@ describe("linux", () => {
       十个,
       事实({ platform: "linux", arch: "x64", appImage: "/home/u/DAWN.AppImage" }),
     )
-    expect(r.能自装 && r.资源.name).toBe("DAWN-Science-0.0.3-linux-x86_64.AppImage")
+    expect(r.能自装 && r.资源.name).toBe("EcoAI-Science-0.0.3-linux-x86_64.AppImage")
     expect(r.能自装 && r.方式).toBe("appimage")
   })
   it("arm64 的 AppImage 是另一个名字（x86_64 / arm64 两套命名）", () => {
@@ -84,7 +84,7 @@ describe("linux", () => {
       十个,
       事实({ platform: "linux", arch: "arm64", appImage: "/home/u/DAWN.AppImage" }),
     )
-    expect(r.能自装 && r.资源.name).toBe("DAWN-Science-0.0.3-linux-arm64.AppImage")
+    expect(r.能自装 && r.资源.name).toBe("EcoAI-Science-0.0.3-linux-arm64.AppImage")
   })
   it("deb 装的（没有 APPIMAGE）装不了，原因是要 root", () => {
     const r = 挑资源(十个, 事实({ platform: "linux", arch: "x64" }))

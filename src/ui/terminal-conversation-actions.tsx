@@ -42,7 +42,7 @@ export function TerminalConversationActions({ client, terminalId, sessionId, onF
       </span>
       <span className="conv-action-tip-wrap">
         <Button variant="secondary" size="icon" className="conv-export" aria-label={t('导出会话')} aria-describedby={exportTip} disabled={!client || !sessionId || exporting} aria-busy={exporting} onClick={() => void exportConversation()}><下载图标 /></Button>
-        <span id={exportTip} role="tooltip" className="conv-action-tip">{sessionId ? t('导出当前 DAWN 会话') : t('进入 DAWN 模式后可导出会话')}</span>
+        <span id={exportTip} role="tooltip" className="conv-action-tip">{sessionId ? t('导出当前 EcoAI 会话') : t('进入 EcoAI 模式后可导出会话')}</span>
       </span>
     </span>
     {notice?.scope === identity ? <导出提示 {...notice} onDone={() => setNotice(undefined)} /> : null}

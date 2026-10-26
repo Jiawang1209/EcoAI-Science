@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <div className="app-shell">
         <div className="topbar">
-          <span className="brand">DAWN Science</span>
+          <span className="brand">EcoAI</span>
         </div>
         <div className="panels">
           <section className="panel">

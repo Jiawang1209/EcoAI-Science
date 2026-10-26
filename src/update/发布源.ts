@@ -31,7 +31,7 @@ export interface GitHub发布源选项 {
 }
 
 /** GitHub Releases 的公开仓库，匿名可读 */
-export const GITHUB_LATEST = "https://api.github.com/repos/Jiawang1209/DAWN-Science/releases/latest"
+export const GITHUB_LATEST = "https://api.github.com/repos/Jiawang1209/EcoAI-Science/releases/latest"
 
 const 是对象 = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null
 
@@ -43,7 +43,7 @@ export function github发布源(选项: GitHub发布源选项): 发布源 {
       let r: Response
       try {
         r = await 取(选项.端点, {
-          headers: { accept: "application/vnd.github+json", "user-agent": "DAWN-Science" },
+          headers: { accept: "application/vnd.github+json", "user-agent": "EcoAI" },
           signal: 外部signal ?? AbortSignal.timeout(超时),
         })
       } catch (e) {

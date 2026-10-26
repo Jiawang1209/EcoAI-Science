@@ -319,7 +319,7 @@ describe("mock 服务器认 key check（2026-09-01 终审 F6）", () => {
     await r.text()
   }
 
-  it("**整句就是暗号**才算验证；用户话里提到「DAWN key check」四个字的，是对话，记进 requests", async () => {
+  it("**整句就是暗号**才算验证；用户话里提到「EcoAI key check」四个字的，是对话，记进 requests", async () => {
     const server: { url: string; requests: unknown[]; keyChecks: unknown[]; close: () => Promise<void> } = await startMockInferenceServer()
     try {
       await 发(server.url, KEY_CHECK_PROMPT)

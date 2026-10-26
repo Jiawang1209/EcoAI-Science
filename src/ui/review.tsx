@@ -184,7 +184,7 @@ export function ReviewPanel({
     return (
       <EmptyState
         title={t("这个工作区不是 git 仓库")}
-        description={t("没有基线，DAWN 不替它猜「改了什么」。下面那半仍然来自账本。")}
+        description={t("没有基线，EcoAI 不替它猜「改了什么」。下面那半仍然来自账本。")}
       />
     )
   }
@@ -247,7 +247,7 @@ export function ReviewPanel({
          * 被 git 忽略的文件。**产物散在约定目录之外、又不是我们的工具写的**
          * ——那时它对两边都是隐形的，而人有权知道这个边界。
          */
-        <p className="hint">{t("没有记到 git 看不见的产物。散在约定目录之外、又不是 DAWN 的工具写的东西，这里看不见。")}</p>
+        <p className="hint">{t("没有记到 git 看不见的产物。散在约定目录之外、又不是 EcoAI 的工具写的东西，这里看不见。")}</p>
       ) : (
         <>
           <p className="caveat">{t("git 忽略了这些，所以上面那半看不到它们。它们来自账本，以及科研约定的那几个产物目录。")}</p>

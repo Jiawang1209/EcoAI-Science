@@ -36,7 +36,7 @@ const 人话字节 = (n: number) => (n >= 1024 ** 3 ? `${Number((n / 1024 ** 3).
 
 /** 表里的原文用 `msgid()` 标出来：`t()` 拿的是变量，双语扫描要靠这个记号认出它们 */
 const 退不了的话: Record<Extract<回退预览["files"], { ok: false }>["reason"], string> = {
-  remote: msgid("远端会话的文件在服务器上，DAWN 不在服务器上存任何东西"),
+  remote: msgid("远端会话的文件在服务器上，EcoAI 不在服务器上存任何东西"),
   before_archive: msgid("这句在开始存档之前（这段会话早于回退功能）"),
   gap: msgid("这句之后有一轮没存上档"),
   too_many_files: msgid("工作区超过 2 万个文件，没法存档"),

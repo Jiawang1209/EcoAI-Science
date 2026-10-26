@@ -192,7 +192,7 @@ it('starts the CLI only at an empty, idle shell prompt', async () => {
     expect(write).not.toHaveBeenCalled()
     control.output('t', '\r\x1b[K$ '); program = 'bash'
     await control.launchCli('t')
-    expect(write).toHaveBeenCalledExactlyOnceWith('dawn\r')
+    expect(write).toHaveBeenCalledExactlyOnceWith('ecoai\r')
   } finally { control.dispose() }
 })
 it('can launch and query a zsh prompt with right-side status text without accepting a draft', async () => {
@@ -200,7 +200,7 @@ it('can launch and query a zsh prompt with right-side status text without accept
   try {
     control.output('t', '\r\x1b[K中文目录 % \x1b[s\x1b[65G1 ↵\x1b[u')
     await control.launchCli('t', 'saved-session')
-    expect(write).toHaveBeenCalledExactlyOnceWith("dawn --resume 'saved-session'\r")
+    expect(write).toHaveBeenCalledExactlyOnceWith("ecoai --resume 'saved-session'\r")
     write.mockClear()
     const query = control.currentDirectory('t')
     await vi.waitFor(() => expect(write).toHaveBeenCalledOnce())
@@ -222,7 +222,7 @@ it('does not mistake Ctrl-A then Ctrl-U for clearing an unsubmitted right-side d
     await expect(control.currentDirectory('t')).rejects.toThrow(/空闲 Shell/)
     expect(write).not.toHaveBeenCalled()
     control.humanInput('t', '\x03'); control.output('t', '\r\x1b[K$ ')
-    await control.launchCli('t'); expect(write).toHaveBeenCalledExactlyOnceWith('dawn\r')
+    await control.launchCli('t'); expect(write).toHaveBeenCalledExactlyOnceWith('ecoai\r')
   } finally { control.dispose() }
 })
 
@@ -236,7 +236,7 @@ it('does not treat a prompt-like character in unsubmitted input as a ready shell
     control.humanInput('t', '\x15')
     control.output('t', '\r\x1b[K$ ')
     await control.launchCli('t')
-    expect(write).toHaveBeenCalledExactlyOnceWith('dawn\r')
+    expect(write).toHaveBeenCalledExactlyOnceWith('ecoai\r')
   } finally { control.dispose() }
 })
 
@@ -245,6 +245,6 @@ it('ignores terminal device replies when checking for human pending input', asyn
   try {
     control.humanInput('t', '\x1b[1;1R\x1b[?1;2c\x1b[>0;276;0c\x1b]11;rgb:ffff/ffff/ffff\x1b\\')
     await control.launchCli('t')
-    expect(write).toHaveBeenCalledExactlyOnceWith('dawn\r')
+    expect(write).toHaveBeenCalledExactlyOnceWith('ecoai\r')
   } finally { control.dispose() }
 })

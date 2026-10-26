@@ -25,7 +25,7 @@ test("**填完 key，对话的选择器里立刻就有它**", async ({ dawn }) =
   // 填完当场验了一次（B9），而且发到的是假服务器（夹具把 kimi-coding 的地址盖到了 mock 上——e2e 不碰外网）。
   // pi 只从 models.json 拿了地址，模型仍是它目录里的 `k3`（Anthropic 协议），所以打的是 `…/messages`
   await expect.poll(() => dawn.keyChecks.length).toBe(1)
-  expect(JSON.stringify(dawn.keyChecks)).toContain("DAWN key check")
+  expect(JSON.stringify(dawn.keyChecks)).toContain("EcoAI key check")
   // pi 0.86 起打的是 `/v1/messages?beta=true`（0.84 是 `/messages`）——**认路径，不认整串**
   expect((dawn.keyChecks[0] as { url: string }).url).toMatch(/\/v1\/messages(\?|$)/)
   // 假服务器答得上 Anthropic 协议 → 验过是好的：这一行没有红字

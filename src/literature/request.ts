@@ -8,7 +8,7 @@ export async function requestJson(source: LiteratureSource, url: URL, options: L
   let reader: ReadableStreamDefaultReader<Uint8Array>|undefined
   let body: ReadableStream<Uint8Array>|null=null
   try {
-    const response=await (options.fetch??globalThis.fetch)(url,{signal:combined,redirect:'error',headers:{accept:'application/json','user-agent':'DAWN-Science/Literature'}})
+    const response=await (options.fetch??globalThis.fetch)(url,{signal:combined,redirect:'error',headers:{accept:'application/json','user-agent':'EcoAI/Literature'}})
     body=response.body
     if(combined.aborted)throw Error('aborted')
     if(allowMissing&&response.status===404)return null

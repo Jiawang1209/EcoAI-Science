@@ -181,7 +181,7 @@ function TerminalModeSwitch({ client, terminalId, exited, onState }: { client: P
   const disabled = exited || busy || mode === undefined || mode === 'starting' || mode === 'stopping'
   return <div className="terminal-mode-switch">
     <div className="terminal-mode-options" role="group" aria-label={t("终端模式")}>
-      <Button variant="ghost" size="sm" aria-pressed={mode === 'dawn'} disabled={disabled} onClick={() => void switchMode('dawn')}>{t("DAWN 模式")}</Button>
+      <Button variant="ghost" size="sm" aria-pressed={mode === 'dawn'} disabled={disabled} onClick={() => void switchMode('dawn')}>{t("EcoAI 模式")}</Button>
       <Button variant="ghost" size="sm" aria-pressed={mode === 'normal'} disabled={disabled} onClick={() => void switchMode('normal')}>{t("Normal 模式")}</Button>
     </div>
     {error || readError ? <span className="terminal-switch-error" role="alert">{error || readError}</span> : null}

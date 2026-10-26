@@ -9,7 +9,7 @@ test("状态栏最右显示实际应用版本，窄窗不隐藏且品牌入口�
   const label = page.locator(".statusbar .brand-version")
   await expect(page.locator(".brand-version")).toHaveCount(1)
   await expect(label).toHaveText(`v${version}`, { timeout: 5000 })
-  await expect(name).toHaveText("DAWN Science")
+  await expect(name).toHaveText("EcoAI-Science")
   for (const width of [1280, 880]) {
     await page.setViewportSize({ width, height: 760 })
     await expect(label).toBeVisible()

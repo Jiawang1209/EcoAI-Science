@@ -16,7 +16,7 @@ import { t, tf } from "./i18n/index.js"
 import { 年月日时分 } from "./format.js"
 import type { ResponseOf } from "../protocol/index.js"
 
-const CONTACT = "DAWN-Science"
+const CONTACT = "EcoAI"
 export type WeixinStatus = ResponseOf<"weixinGetStatus">
 export type NotifySettings = ResponseOf<"weixinGetNotify">
 export type FeishuStatus = ResponseOf<"feishuGetStatus">
@@ -121,7 +121,7 @@ export function RemoteAssistantView({
     <div className="skills-page ra-page">
       <header className="skills-head">
         <h1 className="panel-title">{t("远程助理")}</h1>
-        <p>{t("人不在电脑前，也能跟 DAWN 说话。微信里那个联系人就是 DAWN 本人。")}</p>
+        <p>{t("人不在电脑前，也能跟 EcoAI 说话。微信里那个联系人就是 EcoAI 本人。")}</p>
         {/**
           * **名字是微信定的**：协议里没有改名接口（官方插件源码全篇没有 nickname 之类的字），
           * 所有接进去的都叫「微信ClawBot」。作者要叫 DAWN-Science——只能靠备注。说实话，不假装。

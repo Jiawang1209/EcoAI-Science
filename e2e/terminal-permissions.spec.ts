@@ -10,8 +10,8 @@ async function invoke(page: Page, operation: string, input: unknown) {
 async function open(page: Page) {
   await page.locator('.composer-card .attach-trigger').click()
   await page.getByRole('menuitem', { name: '终端面板', exact: true }).click()
-  await expect(page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true })).toBeEnabled()
-  if (await page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true }).getAttribute('aria-pressed') !== 'true') {
+  await expect(page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true })).toBeEnabled()
+  if (await page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true }).getAttribute('aria-pressed') !== 'true') {
     await expect.poll(async () => /[$#%]$/.test((await page.locator('.dock .xterm-rows').innerText()).trimEnd())).toBe(true)
   }
 }
@@ -25,8 +25,8 @@ async function pick(page: Page, tier: string) {
 test('permission switches share the same conversation and survive return, Normal, last close and history reopening', async ({ dawn }) => {
   const { page } = dawn
   await 在项目里开会话(page); await 等进了对话(page); await open(page)
-  await page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const terminalId = Object.keys(await page.evaluate(() => JSON.parse(sessionStorage.getItem('dawn.window.terminal-owner') || '{}')))[0]!
   const { sessionId } = await invoke(page, 'getTerminalAgentMode', { terminalId })
   await expect(page.locator('.dock .perm-pill-trigger')).toHaveAttribute('data-tier', 'allow-all')
@@ -62,8 +62,8 @@ test('permission switches share the same conversation and survive return, Normal
 test('default changes follow inheritance, explicit tiers stay isolated, and native permission commands are not model turns', async ({ dawn }) => {
   const { page, requests } = dawn
   await 在项目里开会话(page); await 等进了对话(page); await open(page)
-  await page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const terminalId = Object.keys(await page.evaluate(() => JSON.parse(sessionStorage.getItem('dawn.window.terminal-owner') || '{}')))[0]!
   const { sessionId } = await invoke(page, 'getTerminalAgentMode', { terminalId })
   await expect(page.locator('.dock .perm-pill-trigger')).toBeVisible()

@@ -117,7 +117,7 @@ export function SetupWizard({
   return (
     <div className="setup-wizard" role="region" aria-label={t("首次设置")}>
       <div className="sw-head">
-        <h1>{t("欢迎使用 DAWN Science")}</h1>
+        <h1>{t("欢迎使用 EcoAI")}</h1>
         <Button variant="ghost" size="sm" onClick={onSkip}>
           {t("先跳过")}
         </Button>

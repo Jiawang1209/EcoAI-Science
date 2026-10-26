@@ -7,7 +7,7 @@ import { 迁旧数据 } from "../../src/electron/migrate-userdata.js"
 const 造 = () => {
   const root = mkdtempSync(join(tmpdir(), "dawn-migrate-"))
   const 旧 = join(root, "Electron")
-  const 新 = join(root, "DAWN Science")
+  const 新 = join(root, "EcoAI")
   mkdirSync(旧, { recursive: true })
   mkdirSync(新, { recursive: true })
   return { 旧, 新 }

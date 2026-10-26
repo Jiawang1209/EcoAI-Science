@@ -10,7 +10,7 @@ export async function ncbiRequest(source:ScienceSource,url:URL,options:ScienceOp
 }
 export function eutils(name:'esearch'|'esummary',db:string,params:Record<string,string>):URL {
   const url=new URL(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/${name}.fcgi`)
-  url.search=new URLSearchParams({db,retmode:'json',tool:'DAWN-Science',...params}).toString()
+  url.search=new URLSearchParams({db,retmode:'json',tool:'EcoAI',...params}).toString()
   return url
 }
 export function parseSearch(value:unknown,limit:number):{ids:string[];total:number} {

@@ -25,7 +25,7 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
 })
 
-const 原始 = `# DAWN Science —— agent 配置
+const 原始 = `# EcoAI —— agent 配置
 #
 # 这份文件是第一次启动时自动生成的，可以随意修改。
 
@@ -70,7 +70,7 @@ describe("加一个 native agent", () => {
     const f = 配置()
     addNativeAgent(f, { agentId: "kimi", provider: "kimi-coding", model: "k3" })
     const 新 = readFileSync(f, "utf8")
-    expect(新).toContain("DAWN Science —— agent 配置")
+    expect(新).toContain("EcoAI —— agent 配置")
     expect(新).toContain("用前先到「设置」里填 deepseek 的 API key")
     expect(新).toContain("**刻意不写 model**")
   })
@@ -300,7 +300,7 @@ describe("加一个 ACP 适配器", () => {
     const 现在 = readFileSync(f, "utf8")
     expect(现在).toContain("# 托管本地的 claude CLI")
     expect(现在).toContain("models: [opus, sonnet]")
-    expect(现在.startsWith("# DAWN Science —— agent 配置")).toBe(true)
+    expect(现在.startsWith("# EcoAI —— agent 配置")).toBe(true)
   })
 
   /**

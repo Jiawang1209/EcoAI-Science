@@ -1,13 +1,13 @@
 import { expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TerminalConversationActions } from '../../src/ui/terminal-conversation-actions.js'
-it('shows only content search and session export, with a reason when no DAWN conversation is bound', () => {
+it('shows only content search and session export, with a reason when no EcoAI conversation is bound', () => {
   const find = vi.fn(), get = vi.fn()
   render(<TerminalConversationActions client={{ get: get as never }} terminalId="t" onFind={find} />)
   fireEvent.click(screen.getByRole('button', { name: '搜索历史' })); expect(find).toHaveBeenCalledOnce()
   expect((screen.getByRole('button', { name: '导出会话' }) as HTMLButtonElement).disabled).toBe(true)
   expect(screen.queryByRole('button', { name: '找回输入' })).toBeNull()
-  expect(screen.getByText('进入 DAWN 模式后可导出会话')).toBeTruthy(); expect(get).not.toHaveBeenCalled()
+  expect(screen.getByText('进入 EcoAI 模式后可导出会话')).toBeTruthy(); expect(get).not.toHaveBeenCalled()
 })
 it('exports the bound Agent conversation through the same operation as the GUI', async () => {
   const get = vi.fn(async op => op === 'getTerminalAgentMode' ? { mode: 'dawn', sessionId: 'bound-agent' } : { path: '/work/docs/current.md', turns: 6 })

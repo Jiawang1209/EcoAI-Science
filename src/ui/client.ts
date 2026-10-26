@@ -151,7 +151,7 @@ export function createClient(
     if (!window.dawn) {
       // 在浏览器里直接开 index.html 会走到这里。说清楚而不是抛一个 undefined 错误
       return Promise.reject(
-        new WorkbenchClientError("no_bridge", "找不到 window.dawn —— 本页面必须在 DAWN 的 Electron 壳里打开"),
+        new WorkbenchClientError("no_bridge", "找不到 window.dawn —— 本页面必须在 EcoAI 的 Electron 壳里打开"),
       )
     }
     return window.dawn.invoke(op, req, id)
@@ -212,7 +212,7 @@ export function createClient(
       const problem = (m: string) => onProblem?.(m)
       const src = eventSource ?? window.dawn?.onEvent
       if (!src) {
-        problem("找不到 window.dawn.onEvent —— 本页面必须在 DAWN 的 Electron 壳里打开，否则收不到会话更新")
+        problem("找不到 window.dawn.onEvent —— 本页面必须在 EcoAI 的 Electron 壳里打开，否则收不到会话更新")
         return () => {}
       }
 

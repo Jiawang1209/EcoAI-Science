@@ -217,7 +217,7 @@ export function 关于一格({
       <div className="about-app">
         <img className="about-logo" src={appIcon} alt="" aria-hidden="true" />
         <div className="about-identity">
-          <h3 className="about-app-name">DAWN Science</h3>
+          <h3 className="about-app-name">EcoAI</h3>
           <p className="about-description">{t("科研分析工作台")}</p>
         </div>
       </div>

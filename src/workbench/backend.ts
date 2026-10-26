@@ -2052,7 +2052,7 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
         void sessions.abort(sessionId).catch(() => {})
       }, 超时毫秒)
       const 取消 = () => {
-        收({ status: "cancelled", error: { code: "cancelled", message: "DAWN 停了，这一次取消" } })
+        收({ status: "cancelled", error: { code: "cancelled", message: "EcoAI 停了，这一次取消" } })
         void sessions.abort(sessionId).catch(() => {})
       }
       signal.addEventListener("abort", 取消)
@@ -2871,7 +2871,7 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
       return opts.terminalAgentMode?.history?.(terminalId) ?? []
     }),
     setTerminalAgentMode: async ({ terminalId, mode, resumeSessionId }) => terminalRequest(async () => {
-      if (!opts.terminalAgentMode) throw new Error('本次运行没有装配 DAWN CLI')
+      if (!opts.terminalAgentMode) throw new Error('本次运行没有装配 EcoAI CLI')
       return opts.terminalAgentMode.setMode(terminalId, mode, resumeSessionId)
     }),
     getTerminalControl: async ({ terminalId }) => terminalRequest(() => terminalService().state(terminalId)),

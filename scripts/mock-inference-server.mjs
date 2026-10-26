@@ -32,7 +32,7 @@ import { reviewMockTool, reviewMockReply } from './mock-literature-review.mjs'
 import http from "node:http"
 
 /** 默认回复。**刻意包含一句可断言的暗号**，e2e 靠它判断整条链通了 */
-export const CANNED_REPLY = "假模型已应答：DAWN 的整条链路是通的。"
+export const CANNED_REPLY = "假模型已应答：EcoAI 的整条链路是通的。"
 
 /**
  * 假改写：三引号里的原文前面加「改写：」；原文前面若有参考块（【对话背景】【项目文档】【相关代码】），
@@ -465,7 +465,7 @@ export function startMockInferenceServer(opts = {}) {
   const keyChecks = []
   const titleRequests = []
   /** 与 `src/workbench/key-validate.ts` 的 `KEY_CHECK_PROMPT` 是同一句——这是 .mjs 脚本，抄了一份字面量，改要两边一起改 */
-  const KEY_CHECK_PROMPT = "DAWN key check"
+  const KEY_CHECK_PROMPT = "EcoAI key check"
 
   const server = http.createServer((req, res) => {
     let raw = ""

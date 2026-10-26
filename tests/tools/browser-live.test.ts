@@ -33,7 +33,7 @@ describe.skipIf(!有浏览器)("浏览器插件 · 真链路（本机没有 Chro
   const ws = mkdtempSync(join(tmpdir(), "dawn-browser-"))
   const 页 = join(ws, "页.html")
   writeFileSync(页, `<!doctype html><title>试验页</title><body>
-    <h1>DAWN 试验页</h1><p>正文在这。</p>
+    <h1>EcoAI 试验页</h1><p>正文在这。</p>
     <input id="q" placeholder="搜点什么">
     <button id="go" onclick="document.title='点过了'">走</button>
     <a href="https://example.com/甲">链接甲</a></body>`)
@@ -51,7 +51,7 @@ describe.skipIf(!有浏览器)("浏览器插件 · 真链路（本机没有 Chro
     expect(开.isError).toBeUndefined()
     const s = await 取("browser_snapshot").execute("2", {})
     const t = 文字(s)
-    expect(t).toContain("DAWN 试验页")
+    expect(t).toContain("EcoAI 试验页")
     expect(t).toContain("正文在这")
     expect(t).toContain("输入框：1 个")
     expect(t).toContain("example.com")
@@ -96,7 +96,7 @@ describe.skipIf(!有浏览器)("浏览器插件 · 真链路（本机没有 Chro
     await B.execute("b1", { url: `file://${页B}` })
     // A 再取快照:应当仍是 A 自己那张页,不是 B 刚打开的那张
     const 出A = 文字(await snapA.execute("a2", {}))
-    expect(出A).toContain("DAWN 试验页")
+    expect(出A).toContain("EcoAI 试验页")
     expect(出A).not.toContain("会话 B 专属")
   }, 30_000)
 })

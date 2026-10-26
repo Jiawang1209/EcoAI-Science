@@ -15,8 +15,8 @@ async function open(page: Page) {
     const tail = await page.locator('.dock .xterm-screen').innerText()
     return stripVTControlCharacters(tail).trimEnd().endsWith('$')
   }).toBe(true)
-  await page.getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 15000 })
+  await page.getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 15000 })
   return page.evaluate(async () => {
     const p = (await window.dawn!.invoke('listProjects', {}) as any).data
     const s = (await window.dawn!.invoke('listSessions', { projectId: p[0].projectId }) as any).data

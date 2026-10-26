@@ -48,12 +48,14 @@ export class DesktopCliHost {
       await mkdir(dirname(this.opts.descriptor), { recursive: true, mode: 0o700 })
       await writeFile(this.opts.descriptor, JSON.stringify(this.descriptor), { mode: 0o600 })
       await chmod(this.opts.descriptor, 0o600)
-      if (process.platform === 'win32') await writeFile(join(this.root, 'dawn.cmd'), `@echo off\r\nset ELECTRON_RUN_AS_NODE=1\r\n"${this.opts.executable}" "${this.opts.entry}" %*\r\n`, { mode: 0o700 })
-      await writeFile(join(this.root, 'dawn'), `#!/bin/sh\nELECTRON_RUN_AS_NODE=1 exec ${quote(this.opts.executable)} ${quote(this.opts.entry)} "$@"\n`, { mode: 0o700 })
+      for (const command of ['ecoai', 'dawn']) {
+        if (process.platform === 'win32') await writeFile(join(this.root, `${command}.cmd`), `@echo off\r\nset ELECTRON_RUN_AS_NODE=1\r\n"${this.opts.executable}" "${this.opts.entry}" %*\r\n`, { mode: 0o700 })
+        await writeFile(join(this.root, command), `#!/bin/sh\nELECTRON_RUN_AS_NODE=1 exec ${quote(this.opts.executable)} ${quote(this.opts.entry)} "$@"\n`, { mode: 0o700 })
+      }
     })()
   }
   async environment(terminalId: string): Promise<Record<string, string>> {
-    if (this.disposed) throw new Error('DAWN 连接已关闭')
+    if (this.disposed) throw new Error('EcoAI 连接已关闭')
     await this.initialize()
     return { DAWN_CLI_DESCRIPTOR: join(this.root!, 'desktop.json'), DAWN_TERMINAL_ID: terminalId, PATH: this.root + ':' + (process.env.PATH || '/usr/bin:/bin') }
   }
@@ -99,7 +101,7 @@ export class DesktopCliHost {
         await this.opts.launch(terminalId, resumeSessionId)
         const end = Date.now() + 10_000
         while (!this.connections.has(terminalId) && Date.now() < end && !this.disposed) await new Promise(r => setTimeout(r, 40))
-        if (!this.connections.has(terminalId)) throw new Error('DAWN 命令尚未连接，请查看终端提示')
+        if (!this.connections.has(terminalId)) throw new Error('EcoAI 命令尚未连接，请查看终端提示')
       } finally { this.transitions.delete(terminalId) }
     } else if (mode === 'normal' && connection) {
       this.transitions.set(terminalId, 'stopping')
@@ -136,7 +138,7 @@ export class DesktopCliHost {
         opening = true
         const token = typeof frame.token === 'string' ? Buffer.from(frame.token) : Buffer.alloc(0)
         const expected = Buffer.from(this.descriptor!.token)
-        if (frame.version !== 1 || token.length !== expected.length || !timingSafeEqual(token, expected)) throw new Error('DAWN 本机连接认证失败')
+        if (frame.version !== 1 || token.length !== expected.length || !timingSafeEqual(token, expected)) throw new Error('EcoAI 本机连接认证失败')
         if (typeof frame.workspace !== 'string' || !frame.workspace || frame.terminalId !== undefined && typeof frame.terminalId !== 'string' || frame.agentId !== undefined && typeof frame.agentId !== 'string') throw new Error('无效的 CLI 连接请求')
         if (frame.history === true) {
           clearTimeout(authTimer)
@@ -145,7 +147,7 @@ export class DesktopCliHost {
         }
         if (frame.resumeSessionId !== undefined && (typeof frame.resumeSessionId !== 'string' || !frame.resumeSessionId || frame.agentId)) throw new Error('无效的历史会话恢复请求')
         terminal = frame.terminalId
-        if (terminal && this.connections.has(terminal)) throw new Error('这个终端已经连接 DAWN')
+        if (terminal && this.connections.has(terminal)) throw new Error('这个终端已经连接 EcoAI')
         if (frame.resumeSessionId) {
           if (this.claimedSessions.has(frame.resumeSessionId) || [...this.connections.values()].some(c => c.scope.sessionId === frame.resumeSessionId)) throw new Error('这段会话已在另一个终端使用，请先退出那个 Agent')
           claimed = frame.resumeSessionId

@@ -105,7 +105,7 @@ export type WeixinSettingKey =
   | "weixin.boundAt"
   | "weixin.notify"
 
-export const CONTACT_NAME = "DAWN-Science"
+export const CONTACT_NAME = "EcoAI"
 
 /** 通知开关（`weixin.notify` 里的 json）。**缺省全开** */
 export interface NotifySettings {

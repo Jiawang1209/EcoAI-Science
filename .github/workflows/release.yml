@@ -52,7 +52,7 @@ jobs:
       - run: ${{ matrix.cmd }}
       - uses: actions/upload-artifact@v4
         with:
-          name: dawn-science-${{ matrix.name }}
+          name: ecoai-science-${{ matrix.name }}
           path: |
             release/*.dmg
             release/*.zip

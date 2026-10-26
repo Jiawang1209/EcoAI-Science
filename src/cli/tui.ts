@@ -15,6 +15,7 @@ type Options = { model: string; workspace: string; color: boolean; terminal?: Te
   onDraftChange?: () => void; onSubmit: (text: string) => void; onInterrupt: () => void; onExit: () => void }
 const localCommand = (text: string) => /^\/(?:exit|quit|help|status)$|^\/(?:permissions|plan)(?:\s|$)/.test(text.trim())
 const INPUT_HELP = 'Enter 发送 · Shift/Alt+Enter 换行 · Tab 补全建议/展开工具 · /exit 返回 Shell'
+const INPUT_PREFIX = '> EcoAI '
 class SearchAwareTui extends TuiAltScreen {
   get overlayFocused() { return this.isOverlayFocused() }
 }
@@ -22,14 +23,14 @@ class PromptEditor extends Editor {
   ghost = ''
   placeholder?: () => string
   ghostStyle = (text: string) => text
-  private gutter(width: number) { return Math.min(7, Math.max(0, width - 2)) }
+  private gutter(width: number) { return Math.min(visibleWidth(INPUT_PREFIX), Math.max(0, width - 2)) }
   private bottom = ''
   protected override renderBottomBorder(width: number, hidden: number) {
     return this.bottom = super.renderBottomBorder(width, hidden)
   }
   override render(width: number) {
     this.ghost = this.placeholder?.() ?? this.ghost
-    const gutter = this.gutter(width), prefix = '> DAWN '.slice(0, gutter)
+    const gutter = this.gutter(width), prefix = INPUT_PREFIX.slice(0, gutter)
     return super.render(width - gutter).map((line, index) => {
       const lead = index === 1 ? this.borderColor(prefix)
         : index === 0 || line === this.bottom ? this.borderColor('─'.repeat(gutter)) : ' '.repeat(gutter)
@@ -101,7 +102,7 @@ export class CliTui {
       const border = dim('#'.repeat(width))
       const lines = [
         border,
-        truncateToWidth(accent(bold('DAWN Science')) + dim(' · ' + plain(this.usage.context?.model ?? options.model)), width, ''),
+        truncateToWidth(accent(bold('EcoAI')) + dim(' · ' + plain(this.usage.context?.model ?? options.model)), width, ''),
         truncateToWidth(dim(plain(options.workspace)), width, ''),
         truncateToWidth(dim(INPUT_HELP), width, ''),
         truncateToWidth(dim('⌘/Ctrl+F 搜索历史 · Tab/→ 采纳建议 · /plan 先出方案 · /help 帮助'), width, ''),

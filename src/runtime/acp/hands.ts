@@ -264,7 +264,7 @@ export class 客户端的手 {
       case "terminal/release":
         return this.放终端(p)
       default:
-        throw new 手的错误(-32601, `DAWN 不支持 ${method}`)
+        throw new 手的错误(-32601, `EcoAI 不支持 ${method}`)
     }
   }
 

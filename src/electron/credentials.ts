@@ -313,7 +313,7 @@ export function readOnlyCredentials(source: CredentialStore): import('../workben
     get: id => source.get(id), configured: () => source.configured(),
     isEncrypted: () => source.isEncrypted(), broken: () => source.broken(),
     verified: () => source.verified(), warm: () => source.warm(),
-    set: () => { throw new Error('预览正在只读复用已有凭证，请在原 DAWN 中修改') },
-    delete: () => { throw new Error('预览正在只读复用已有凭证，请在原 DAWN 中修改') },
+    set: () => { throw new Error('预览正在只读复用已有凭证，请在原 EcoAI 中修改') },
+    delete: () => { throw new Error('预览正在只读复用已有凭证，请在原 EcoAI 中修改') },
   }
 }

@@ -169,7 +169,7 @@ test.describe("ACP", () => {
     const plan = menu.getByRole("menuitemcheckbox", { name: "先出方案", exact: true })
     await expect(plan).toBeDisabled()
     await expect(plan).toHaveAttribute("aria-checked", "false")
-    await expect(plan).toContainText("这个 agent 不归 DAWN 管工具，先出方案用不了")
+    await expect(plan).toContainText("这个 agent 不归 EcoAI 管工具，先出方案用不了")
     await expect(plan.locator(".composer-menu-reason")).toBeVisible()
     await add.click()
     await expect(menu).toHaveCount(0)
@@ -507,11 +507,11 @@ test.describe("ACP 用我们的工具", () => {
     dawnOptions: { providersYaml: PROVIDERS, gitInit: true, env: { FAKE_ACP_CALL_MCP: "1" } },
   })
 
-  test("**它真的连上了 DAWN，拿到工具并调得动**", async ({ dawn }) => {
+  test("**它真的连上了 EcoAI，拿到工具并调得动**", async ({ dawn }) => {
     const { page } = dawn
     await 用某个agent开一段(page, /claude-acp/)
     await 等进了对话(page)
-    await page.getByPlaceholder(/输入问题/).fill("用一下 DAWN 的工具")
+    await page.getByPlaceholder(/输入问题/).fill("用一下 EcoAI 的工具")
     await page.getByRole("button", { name: "发送", exact: true }).click()
 
     const 结果 = page.getByText(/【MCP 结果】/).last()

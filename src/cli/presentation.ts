@@ -10,13 +10,13 @@ export function toolDetail(input: unknown): string {
   }
   return ''
 }
-export const CLI_HELP = `DAWN Science · 命令行 Agent
+export const CLI_HELP = `EcoAI · 命令行 Agent
 
-  dawn                    在当前目录进入 Agent
-  dawn --agent <名称>      选择配置中的本地 API Agent
-  dawn --resume [会话ID]   选择或恢复当前目录中的历史会话（连接桌面）
-  dawn --help              查看帮助
-  dawn agents              列出配置中的 Agent
+  ecoai                    在当前目录进入 Agent
+  ecoai --agent <名称>      选择配置中的本地 API Agent
+  ecoai --resume [会话ID]   选择或恢复当前目录中的历史会话（连接桌面）
+  ecoai --help              查看帮助
+  ecoai agents              列出配置中的 Agent
 
 Agent 中：
   /exit                   退出并回到原 Shell（Normal）
@@ -36,7 +36,7 @@ Agent 中：
   Ctrl-L                  刷新当前终端界面
   Ctrl-C                  执行时停止；空闲先清草稿，再退出
 
-DAWN 内启动会复用已配置的模型与凭证。
+EcoAI 内启动会复用已配置的模型与凭证。
 独立运行可使用标准 API key 环境变量，或 DAWN_API_KEY。
 DAWN_CONFIG 指定配置；DAWN_CLI_HOME 指定独立 CLI 数据目录。
 `

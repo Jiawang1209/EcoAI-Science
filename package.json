@@ -1,10 +1,10 @@
 {
-  "name": "dawn-science",
+  "name": "ecoai-science",
   "version": "0.0.36",
   "main": "dist/electron/main.js",
-  "homepage": "https://github.com/Jiawang1209/DAWN-Science",
+  "homepage": "https://github.com/Jiawang1209/EcoAI-Science",
   "private": true,
-  "description": "Data Agent Workbench with Notebooks — for science.",
+  "description": "A local AI-Agent workbench for ecological research.",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "engines": {
@@ -50,7 +50,8 @@
     "rehearse:update": "node scripts/rehearse-update.mjs",
     "rehearse:handoff": "node scripts/rehearse-handoff.mjs",
     "rehearse:real-update": "node scripts/rehearse-real-update.mjs",
-    "build:cli": "node scripts/build-cli.mjs"
+    "build:cli": "node scripts/build-cli.mjs",
+    "ecoai": "tsx --env-file-if-exists=.env src/cli.ts"
   },
   "dependencies": {
     "@earendil-works/pi-agent-core": "^0.86.0",
@@ -121,6 +122,7 @@
     "vitest": "^4.1.10"
   },
   "bin": {
+    "ecoai": "bin/ecoai",
     "dawn": "bin/dawn"
   }
 }

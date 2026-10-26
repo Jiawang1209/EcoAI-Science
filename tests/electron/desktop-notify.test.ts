@@ -63,7 +63,7 @@ describe("真出口", () => {
   })
   it("没给 lang → 用缺省语言", () => {
     const c = 造("darwin")
-    c.出口.弹({ kind: "test", title: { msgid: "桌面通知是通的", args: [] }, body: { msgid: "点这一条会回到 DAWN。", args: [] } })
+    c.出口.弹({ kind: "test", title: { msgid: "桌面通知是通的", args: [] }, body: { msgid: "点这一条会回到 EcoAI。", args: [] } })
     expect(假Notification.造过[0]!.o.title).toBe("桌面通知是通的")
   })
   it("系统不支持：不造、出声；支持() 如实", () => {

@@ -207,7 +207,7 @@ describe("压缩上下文（2026-09-27）", () => {
   })
   it("不可用照样列出，并说清是哪一种", () => {
     expect(那条({ session: undefined })?.unavailable).toBe("还没有会话")
-    expect(那条({ session: { ...session, kind: "acp" } })?.unavailable).toBe("外部 agent 自己管上下文，DAWN 压不了")
+    expect(那条({ session: { ...session, kind: "acp" } })?.unavailable).toBe("外部 agent 自己管上下文，EcoAI 压不了")
     expect(那条({ session: { ...session, kind: "kernel" } })?.unavailable).toBe("这段不是和模型的对话，没有上下文可压")
     expect(那条({ busy: true })?.unavailable).toBe("这一轮还在跑，做完再压缩")
   })
@@ -259,7 +259,7 @@ describe("先出方案（2026-09-27）", () => {
   })
   it("没有会话 / 不支持时照样列着、写原因", () => {
     expect(找({ session: undefined }).unavailable).toBe("还没有会话")
-    expect(找({ plan: { on: false, unavailable: "这个 agent 不归 DAWN 管工具，先出方案用不了" } }).unavailable).toContain("不归 DAWN")
+    expect(找({ plan: { on: false, unavailable: "这个 agent 不归 EcoAI 管工具，先出方案用不了" } }).unavailable).toContain("不归 EcoAI")
   })
 })
 

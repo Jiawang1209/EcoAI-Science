@@ -99,7 +99,7 @@ function 插入(原文: string, 台: 新MCP服务器): string {
      */
     const 尾 = [...lines]
     while (尾.length > 0 && 尾[尾.length - 1]!.trim() === "") 尾.pop()
-    return [...尾, "", "# MCP 服务器（由 DAWN 添加）", "mcp:", ...成块(台), ""].join("\n")
+    return [...尾, "", "# MCP 服务器（由 EcoAI 添加）", "mcp:", ...成块(台), ""].join("\n")
   }
 
   /**

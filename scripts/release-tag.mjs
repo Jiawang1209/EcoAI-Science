@@ -55,7 +55,7 @@ if (旧 === 版本) {
   console.log(`package.json ${旧} → ${版本}，已提交`)
 }
 
-sh("git", ["tag", "-a", tag, "-m", `DAWN Science ${版本}`])
+sh("git", ["tag", "-a", tag, "-m", `EcoAI ${版本}`])
 console.log(`已打 tag ${tag}（指向 ${sh("git", ["rev-parse", "--short", "HEAD"])}）
 
 **还没推。** 推了才会触发打包与发 Release：

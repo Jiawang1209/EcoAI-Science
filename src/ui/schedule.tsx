@@ -228,7 +228,7 @@ export function ScheduleView({ actions }: { actions?: ScheduleActions | undefine
         <h1 className="panel-title">{t("定时")}</h1>
         <p className="hint">{t("到点了就开一段全新的会话、把任务说明发给它、等它做完——不继承任何对话。无人值守：要确认的一律拒。")}</p>
         {/* **常驻，不是提示一次**：这是最容易被误解的一件事 */}
-        <p className="caveat">{t("DAWN 关着的时候不跑。回来时超过 15 分钟的那次记成「跳过」，不补。")}</p>
+        <p className="caveat">{t("EcoAI 关着的时候不跑。回来时超过 15 分钟的那次记成「跳过」，不补。")}</p>
         <div className="skills-actions">
           <Button variant="secondary" size="sm" disabled={Boolean(编辑)} onClick={开新建}>
             {t("新建定时任务")}

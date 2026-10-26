@@ -355,7 +355,7 @@ test.describe("先出方案 · 不支持的会话", () => {
     const 开关 = 菜单.getByRole("menuitemcheckbox", { name: "先出方案", exact: true })
     await expect(开关).toBeDisabled()
     await expect(开关).toHaveAttribute("aria-checked", "false")
-    await expect(开关).toContainText("这个 agent 不归 DAWN 管工具，先出方案用不了")
+    await expect(开关).toContainText("这个 agent 不归 EcoAI 管工具，先出方案用不了")
     await expect(开关.locator(".composer-menu-reason")).toBeVisible()
     await 关方案菜单(page, 主区(page))
     /** 原因与禁用项同在菜单里，不把菜单或输入卡撑出窗口。 */

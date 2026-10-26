@@ -58,7 +58,7 @@ const 老配置 = `agents:
     model: deepseek-flash
     capabilities: [chat, exec]
 
-  # 由 DAWN 在设置里添加
+  # 由 EcoAI 在设置里添加
   claude-code-acp:
     kind: acp
     command: node

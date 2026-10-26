@@ -60,7 +60,7 @@ test("**点应用名回初始画面**", async ({ dawn }) => {
   await page.getByRole("button", { name: "发送", exact: true }).click()
   await expect(page.locator(".turns").getByText("先说一句")).toBeVisible({ timeout: 30_000 })
 
-  await page.getByRole("button", { name: "DAWN Science" }).click()
+  await page.getByRole("button", { name: "EcoAI 首页", exact: true }).click()
   await expect(page.locator(".welcome")).toBeVisible()
   await expect(page.locator(".sidebar .sess-item")).toHaveCount(1)
 })

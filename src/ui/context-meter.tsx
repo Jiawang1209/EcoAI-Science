@@ -40,7 +40,7 @@ export const 提醒比例 = 0.85
 export function 读仪表(kind: SessionSummary["kind"], u: ContextUsage | undefined, 错?: string): 仪表读数 | undefined {
   if (kind === "kernel" || kind === "pty") return undefined
   if (kind !== "native") {
-    return { 档: "dim", 值: t("读不到"), 细节: [t("这是外部 agent，它自己管上下文与压缩；DAWN 读不到它用了多少")], 能压: false }
+    return { 档: "dim", 值: t("读不到"), 细节: [t("这是外部 agent，它自己管上下文与压缩；EcoAI 读不到它用了多少")], 能压: false }
   }
   if (错) return { 档: "dim", 值: "—", 细节: [tf("没取到：{0}", 错)], 能压: true }
   if (!u) return { 档: "dim", 值: "—", 细节: [t("还没取到")], 能压: true }

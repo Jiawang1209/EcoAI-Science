@@ -478,7 +478,7 @@ describe("2026-09-28 审查修的", () => {
     c.器.交给定时("s")
     c.问权限("a")
     c.器.dispose()
-    c.器.定时跑完了("周报", "cancelled", "DAWN 停了", "s")
+    c.器.定时跑完了("周报", "cancelled", "EcoAI 停了", "s")
     expect(c.器.试一条()).toEqual({ shown: false, reason: "no_exit" })
     expect(c.弹过.map((n) => n.kind)).toEqual(["permission"])
     const 内 = c.器 as unknown as Record<"未看" | "问过的" | "定时的" | "定时完了" | "起轮时停过" | "收尾时停过", { size: number }>

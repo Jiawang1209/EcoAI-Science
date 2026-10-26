@@ -18,11 +18,11 @@ async function openTerminal(page: Page) {
 async function start(page: Page) {
   await 在项目里开会话(page); await 等进了对话(page); await openTerminal(page)
   await expect.poll(async () => /[$#%](?:\s+[✭*]?main)?$/.test((await page.locator('.dock .xterm-rows').innerText()).trimEnd())).toBe(true)
-  await page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true }).click()
-  await expect(page.locator('.dock').getByRole('button', { name: 'DAWN 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true }).click()
+  await expect(page.locator('.dock').getByRole('button', { name: 'EcoAI 模式', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const terminalId = Object.keys(await page.evaluate(() => JSON.parse(sessionStorage.getItem('dawn.window.terminal-owner') || '{}')))[0]!
   const state = await invoke(page, 'getTerminalAgentMode', { terminalId })
-  await expect(page.locator('.dock .xterm-rows')).toContainText('> DAWN')
+  await expect(page.locator('.dock .xterm-rows')).toContainText('> EcoAI')
   return { terminalId, sessionId: state.sessionId as string }
 }
 async function submit(page: Page, text: string) {

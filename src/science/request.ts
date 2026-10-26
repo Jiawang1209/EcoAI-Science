@@ -6,7 +6,7 @@ export async function scienceRequest(source:ScienceSource,url:URL,options:Scienc
   const timeout=AbortSignal.timeout(options.timeoutMs??20000),combined=signal?AbortSignal.any([signal,timeout]):timeout
   let reader:ReadableStreamDefaultReader<Uint8Array>|undefined,body:ReadableStream<Uint8Array>|null=null
   try {
-    const response=await(options.fetch??globalThis.fetch)(url,{signal:combined,redirect:'error',headers:{accept:format==='json'?'application/json':'text/plain','user-agent':'DAWN-Science/Research-Data'}})
+    const response=await(options.fetch??globalThis.fetch)(url,{signal:combined,redirect:'error',headers:{accept:format==='json'?'application/json':'text/plain','user-agent':'EcoAI/Research-Data'}})
     body=response.body
     if(combined.aborted)throw Error('aborted')
     if(response.status===429)throw new ScienceError('rate_limited',`${source} 请求过于频繁，请稍后重试`)

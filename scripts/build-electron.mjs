@@ -180,7 +180,7 @@ cpSync(
   join("scripts", "dawn-mcp-server.mjs"),
   join("dist", "electron", "dawn-mcp-server.mjs"),
 )
-console.log("build-electron: DAWN 的 MCP 服务器已拷进 dist/electron/")
+console.log("build-electron: EcoAI 的 MCP 服务器已拷进 dist/electron/")
 
 if (existsSync("skills")) {
   cpSync("skills", join("dist", "skills"), { recursive: true })

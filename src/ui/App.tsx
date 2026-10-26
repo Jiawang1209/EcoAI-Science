@@ -35,7 +35,7 @@ import { StatusNotices } from "./status-notices.js"
  * 现在：侧栏常驻、新建会话是主动作、默认进对话、项目概览降为侧栏底部入口。
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import rpIcon from "../../packaging/icon.svg"
+import ecoaiIcon from "../../packaging/brand/ecoai-mark.png"
 import { 图廊根 } from "./case-cards.js"
 import { useStore } from "@nanostores/react"
 import type { ProjectSummary, ResponseOf, SessionSummary, SessionUpdate } from "../protocol/index.js"
@@ -1566,7 +1566,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
   /** 空态发出去用的是 `agentIds[0]`（与空态那颗 agent pill 同一个判据）：它不是 native 就用不了先出方案 */
   const 空态方案不能 =
     providers.agents.find((x) => x.agentId === agentIds[0])?.kind !== "native"
-      ? t("这个 agent 不归 DAWN 管工具，先出方案用不了")
+      ? t("这个 agent 不归 EcoAI 管工具，先出方案用不了")
       : undefined
   // 按下之后换成了不支持的 agent：那一下作废，别留一个「按下 + 灰着」、也别带着它去建会话
   useEffect(() => {
@@ -4636,7 +4636,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
     return (
       <div className="app-shell">
         <div className="topbar">
-          <span className="brand">DAWN Science</span>
+          <span className="brand">EcoAI</span>
         </div>
         {/**
           * **这一处走整页，不是窄栏**（2026-09-16）。这是一条**早退分支**：
@@ -5150,8 +5150,8 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
           * （32×32，间距 36），我们照这个关系排。
           */}
         <div className="brand-stack">
-          <Button variant="text" size="inline" className="brand" aria-label="DAWN Science" onClick={回到初始画面}>
-            <img className="brand-mark" src={rpIcon} alt="" aria-hidden="true" /><span className="brand-name">DAWN Science</span>
+          <Button variant="text" size="inline" className="brand" aria-label={t("EcoAI 首页")} onClick={回到初始画面}>
+            <img className="brand-mark" src={ecoaiIcon} alt="" aria-hidden="true" /><span className="brand-name">EcoAI-Science</span>
           </Button>
 
         </div>

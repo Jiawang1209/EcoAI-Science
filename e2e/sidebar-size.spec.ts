@@ -172,7 +172,7 @@ test("**重开之后，宽度与折叠都还是上次那样**", async ({ dawn })
  */
 test("**顶栏标志 → 折叠 → 快捷键，搜索移至工作区**", async ({ dawn }) => {
   const { page } = dawn
-  const 标志 = (await page.getByRole("button", { name: "DAWN Science" }).boundingBox())!
+  const 标志 = (await page.getByRole("button", { name: "EcoAI 首页", exact: true }).boundingBox())!
   const 折叠 = (await page.getByRole("button", { name: "收起侧边栏" }).boundingBox())!
   const 快捷键 = (await page.getByRole("button", { name: "快捷键速查" }).boundingBox())!
   const 搜索 = (await page.locator(".workspace-header .side-search-toggle").boundingBox())!

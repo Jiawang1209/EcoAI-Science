@@ -10,7 +10,7 @@ test("**建一条、立即跑一次、记录成功、会话留在项目里；暂
   await 在项目里开会话(page)
   await page.getByRole("button", { name: "定时", exact: true }).click()
   const 屏 = page.locator(".schedule-page")
-  await expect(屏).toContainText("DAWN 关着的时候不跑")
+  await expect(屏).toContainText("EcoAI 关着的时候不跑")
   await expect(屏).toContainText("还没有定时任务")
 
   await 屏.getByRole("button", { name: "新建定时任务" }).click()

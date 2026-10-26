@@ -194,7 +194,7 @@ describe("真实后端 · 经服务端端到端", () => {
   it("飞书:初始 unbound;通知开关持久(2026-08-25 远程助理第二格)", async () => {
     const st = (await ctx.backend.feishuGetStatus({})) as { state: string; contactName: string }
     expect(st.state).toBe("unbound")
-    expect(st.contactName).toBe("DAWN-Science")
+    expect(st.contactName).toBe("EcoAI")
     const n = (await ctx.backend.feishuSetNotify({ done: false })) as { done: boolean }
     expect(n.done).toBe(false)
     expect(((await ctx.backend.feishuGetNotify({})) as { done: boolean }).done).toBe(false)

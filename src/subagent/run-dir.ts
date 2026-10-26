@@ -118,7 +118,7 @@ export function 子agent组(sessionDir: string, toolCallId: string): { index: nu
     .sort((a, b) => a.index - b.index)
 }
 
-export const 没跑完 = "DAWN 关掉时它还在跑，没有跑完"
+export const 没跑完 = "EcoAI 关掉时它还在跑，没有跑完"
 
 export const 记录读不出来 = "这个子 agent 的记录（meta.json）读不出来，看不到它当时的任务与结果"
 const 记录坏了: 子运行元 = { agent: "子 agent", task: "", status: "error", error: 记录读不出来, startedAt: 0 }

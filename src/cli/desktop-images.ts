@@ -30,7 +30,7 @@ export class DesktopImages {
       ...(afterRevision === this.revision ? {} : { pending: this.pending.map(({ id, name, thumbnail }) => ({ id, name, thumbnail })) }) }
   }
   private editable() {
-    if (this.closed) throw new Error('终端 Agent 已退出，请重新进入 DAWN 模式')
+    if (this.closed) throw new Error('终端 Agent 已退出，请重新进入 EcoAI 模式')
     if (this.processing || this.sending) throw new Error('图片正在处理，请稍后再试')
   }
   async add(input: readonly TerminalImageInput[]) {

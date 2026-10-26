@@ -20,7 +20,7 @@ writeFileSync(join(ud,"credentials.json"),JSON.stringify({encrypted:true,entries
 const env={...process.env}; for(const k of Object.keys(env)) if(k.startsWith("DAWN_")||k.endsWith("_API_KEY")) delete env[k]
 env.DAWN_HIDE_WINDOW="1"
 const t0=Date.now(); let n=0; const shots=[]
-const app=await _electron.launch({executablePath:join(ROOT,"release/mac-arm64/DAWN Science.app/Contents/MacOS/DAWN Science"),args:[`--user-data-dir=${ud}`],env})
+const app=await _electron.launch({executablePath:join(ROOT,"release/mac-arm64/EcoAI.app/Contents/MacOS/EcoAI"),args:[`--user-data-dir=${ud}`],env})
 const page=await app.firstWindow(); const errs=[]; page.on("pageerror",e=>errs.push(e.message.slice(0,200))); page.on("console",m=>{ if(m.type()==="error") errs.push(m.text().slice(0,200)) })
 const shot=async(名)=>{ const p=join(tmp,`${++n}-${名}.png`); await page.screenshot({path:p}); shots.push(p) }
 // 失败要记下来、最后让进程退 1——此前 ✗ 只是打印，`npm run rehearse:update` 永远退 0，什么都门禁不了（2026-09-01 审查抓的）

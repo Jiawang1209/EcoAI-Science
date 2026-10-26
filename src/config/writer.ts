@@ -70,7 +70,7 @@ function 插入(原文: string, agent: NewNativeAgent): string {
 
   const 块 = [
     "",
-    `  # 由 DAWN 在设置里添加`,
+    `  # 由 EcoAI 在设置里添加`,
     `  ${agent.agentId}:`,
     `    kind: native`,
     `    provider: ${agent.provider}`,
@@ -448,7 +448,7 @@ export function addAcpAgent(file: string, agent: NewAcpAgent): ProviderRegistry 
   const { 末 } = agents段(lines)
   const 块 = [
     "",
-    `  # 由 DAWN 在设置里添加`,
+    `  # 由 EcoAI 在设置里添加`,
     `  ${agent.agentId}:`,
     `    kind: acp`,
     `    command: ${引起来(agent.command.trim())}`,

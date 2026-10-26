@@ -68,7 +68,7 @@ export const 通知文案 = {
   定时败: "定时「{0}」失败了",
   定时消: "定时「{0}」取消了",
   试标题: "桌面通知是通的",
-  试正文: "点这一条会回到 DAWN。",
+  试正文: "点这一条会回到 EcoAI。",
 } as const
 
 const 文 = (msgid: string, ...args: string[]): 文案 => ({ msgid, args })

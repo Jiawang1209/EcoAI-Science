@@ -34,7 +34,7 @@
  * 那一句暗号。**`scripts/mock-inference-server.mjs` 里抄了一份字面量**（它是 .mjs 脚本，不 import 这里）——
  * 改这句要两边一起改，假后端认的是整句相等。
  */
-export const KEY_CHECK_PROMPT = "DAWN key check"
+export const KEY_CHECK_PROMPT = "EcoAI key check"
 
 /**
  * `soft` 的 `状态`：端点**回了话**（开头有 HTTP 状态码）才有。有它就不是网络的事——说「可能是网络」是在误导（2026-09-28，Kimi 回 400 那次）。

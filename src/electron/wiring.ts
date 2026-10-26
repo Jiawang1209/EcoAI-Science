@@ -1276,7 +1276,7 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
         ...(opts.更新.应用路径
           ? { appPath: opts.更新.应用路径 }
           : 假装换包
-            ? { appPath: join(opts.更新.下载目录, "DAWN Science.app") }
+            ? { appPath: join(opts.更新.下载目录, "EcoAI.app") }
             : {}),
         可写: (路径) => {
           try {
@@ -1329,8 +1329,8 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
   const backend = createWorkbenchBackend({
     terminalImages: {
       read: (id, revision) => cliHost?.attachments(id, revision) ?? { revision: 0, pending: [] },
-      update: async request => { if (!cliHost) throw new Error('本次运行没有装配 DAWN CLI'); return cliHost.updateAttachments(request) },
-      image: (id, imageId) => { if (!cliHost) throw new Error('本次运行没有装配 DAWN CLI'); return cliHost.image(id, imageId) },
+      update: async request => { if (!cliHost) throw new Error('本次运行没有装配 EcoAI CLI'); return cliHost.updateAttachments(request) },
+      image: (id, imageId) => { if (!cliHost) throw new Error('本次运行没有装配 EcoAI CLI'); return cliHost.image(id, imageId) },
     },
     terminalAgentMode: {
       history: async id => cliHost?.history(await terminalControl.currentDirectory(id)) ?? [],
@@ -1341,7 +1341,7 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
         const selection = state.sessionId ? nativeRuntime.currentModel(state.sessionId) : undefined
         return { ...state, ...(session ? { projectId: session.projectId } : {}), ...(selection ? { selection } : {}) }
       },
-      setMode: async (id, mode, resumeSessionId) => { terminalControl.state(id); if (!cliHost) throw new Error("本次运行没有装配 DAWN CLI"); return cliHost.setMode(id, mode, resumeSessionId) },
+      setMode: async (id, mode, resumeSessionId) => { terminalControl.state(id); if (!cliHost) throw new Error("本次运行没有装配 EcoAI CLI"); return cliHost.setMode(id, mode, resumeSessionId) },
     },
     terminals: terminalControl,
     terminalOwnerAllowed: id => nativeRuntime.canControlTerminal(id),
@@ -1751,7 +1751,7 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
           const providers = await backend.getProviders({}) as ResponseOf<'getProviders'>
           const selected = providers.agents.find(a => a.kind === 'native' && a.agentId === (agentId ?? (owner ? sessionStore.get(owner)?.agentId : undefined)))
             ?? (!agentId ? providers.agents.find(a => a.kind === 'native') : undefined)
-          if (!selected || selected.kind !== 'native') throw new Error('请先在 DAWN 中选择已配置的 API 模型')
+          if (!selected || selected.kind !== 'native') throw new Error('请先在 EcoAI 中选择已配置的 API 模型')
           const task = await backend.createTask({ agentId: selected.agentId, workspace }) as ResponseOf<'createTask'>
           if (!task.sessionId) throw new Error('无法创建 CLI 会话')
           sessionId = task.sessionId

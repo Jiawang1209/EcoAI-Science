@@ -162,10 +162,10 @@ describe("附栏开关", () => {
     expect(onToggle).toHaveBeenCalledWith(true)
   })
   it("不支持：按钮禁用，原因关联悬停提示和可聚焦的外层", () => {
-    render(<先出方案开关 on={false} 不能的原因="这个 agent 不归 DAWN 管工具，先出方案用不了" />)
+    render(<先出方案开关 on={false} 不能的原因="这个 agent 不归 EcoAI 管工具，先出方案用不了" />)
     expect((screen.getByRole("button", { name: "先出方案" }) as HTMLButtonElement).disabled).toBe(true)
     const 原因 = screen.getByRole("tooltip")
-    expect(原因.textContent).toBe("这个 agent 不归 DAWN 管工具，先出方案用不了")
+    expect(原因.textContent).toBe("这个 agent 不归 EcoAI 管工具，先出方案用不了")
     const 包 = document.querySelector(".plan-toggle-wrap")!
     expect(包.getAttribute("tabindex")).toBe("0")
     expect(包.getAttribute("aria-describedby")).toBe(原因.id)
@@ -205,7 +205,7 @@ describe("对话里：附栏开关、带子、/plan、卡片接线", () => {
     const onSend = vi.fn(async () => {})
     render(<ConversationView session={{ ...会话, kind: "acp" }} items={[]} onSend={onSend} />)
     expect((菜单方案() as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getAllByText("这个 agent 不归 DAWN 管工具，先出方案用不了")).toHaveLength(1)
+    expect(screen.getAllByText("这个 agent 不归 EcoAI 管工具，先出方案用不了")).toHaveLength(1)
     const 框 = screen.getByPlaceholderText(/输入问题/) as HTMLTextAreaElement
     fireEvent.change(框, { target: { value: "/plan 分析一下" } })
     await act(async () => {
@@ -213,7 +213,7 @@ describe("对话里：附栏开关、带子、/plan、卡片接线", () => {
     })
     expect(onSend).not.toHaveBeenCalled()
     expect(框.value).toBe("/plan 分析一下")
-    expect(screen.getAllByText(/这个 agent 不归 DAWN 管工具，先出方案用不了/)).toHaveLength(2)
+    expect(screen.getAllByText(/这个 agent 不归 EcoAI 管工具，先出方案用不了/)).toHaveLength(2)
   })
 
   it("native 还没报上 dawn.plan：灰着，旁边写「还没准备好」（D7：灰着要看得见为什么）", () => {
@@ -318,13 +318,13 @@ describe("空态", () => {
     await waitFor(() => expect(box.value).toBe("/plan /bot:stable-id 检查数据"))
   })
   it("按下之后原因来了（换成不支持的 agent）：不显示按下", () => {
-    render(<EmptyConversation agents={["claude-acp"]} onStart={() => {}} onOpenSettings={() => {}} 先出方案={{ on: true, 不能的原因: "这个 agent 不归 DAWN 管工具，先出方案用不了", onToggle: () => {} }} />)
+    render(<EmptyConversation agents={["claude-acp"]} onStart={() => {}} onOpenSettings={() => {}} 先出方案={{ on: true, 不能的原因: "这个 agent 不归 EcoAI 管工具，先出方案用不了", onToggle: () => {} }} />)
     expect(菜单方案().getAttribute("aria-checked")).toBe("false")
   })
   it("选的 agent 不支持：`/plan` 不开会话、说原因", async () => {
     const onStart = vi.fn()
     render(
-      <EmptyConversation agents={["claude-acp"]} onStart={onStart} onOpenSettings={() => {}} 先出方案={{ on: false, 不能的原因: "这个 agent 不归 DAWN 管工具，先出方案用不了", onToggle: () => {} }} />,
+      <EmptyConversation agents={["claude-acp"]} onStart={onStart} onOpenSettings={() => {}} 先出方案={{ on: false, 不能的原因: "这个 agent 不归 EcoAI 管工具，先出方案用不了", onToggle: () => {} }} />,
     )
     const 框 = screen.getByPlaceholderText(/输入问题/) as HTMLTextAreaElement
     fireEvent.change(框, { target: { value: "/plan 分析一下" } })
@@ -332,6 +332,6 @@ describe("空态", () => {
       fireEvent.keyDown(框, { key: "Enter" })
     })
     expect(onStart).not.toHaveBeenCalled()
-    expect(screen.getAllByText(/这个 agent 不归 DAWN 管工具，先出方案用不了/)).toHaveLength(2)
+    expect(screen.getAllByText(/这个 agent 不归 EcoAI 管工具，先出方案用不了/)).toHaveLength(2)
   })
 })

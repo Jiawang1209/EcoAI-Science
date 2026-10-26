@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { terminalSearchKey, dawnEditorKey } from '../../src/ui/terminal-keys.js'
-it('distinguishes DAWN multiline Enter from send and leaves Normal and IME untouched', () => {
+it('distinguishes EcoAI multiline Enter from send and leaves Normal and IME untouched', () => {
   const event = (extra: Partial<KeyboardEvent> = {}) => ({ type: 'keydown', key: 'Enter', shiftKey: false, altKey: false, ctrlKey: false, metaKey: false, isComposing: false, keyCode: 13, ...extra })
   expect(dawnEditorKey(event({ shiftKey: true }), true)).toBe('\x1b[13;2u')
   expect(dawnEditorKey(event({ altKey: true }), true)).toBe('\x1b[13;2u')

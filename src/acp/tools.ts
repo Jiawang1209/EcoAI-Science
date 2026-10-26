@@ -78,9 +78,9 @@ export function 工具清单(有内核: boolean): 网关工具[] {
           {
             name: "dawn_run_in_kernel",
             description:
-              "在 DAWN 起的 Jupyter 内核里跑一段代码（Python 或 R）。**同一段会话里变量留得住**——" +
+              "在 EcoAI 起的 Jupyter 内核里跑一段代码（Python 或 R）。**同一段会话里变量留得住**——" +
               "上一次定义的东西下一次还在。比自己起 python 进程强的地方：输出是结构化的（图、表、报错分开），" +
-              "而且这次运行会带着环境快照进 DAWN 的账本，之后查得到「这个结果是怎么来的」。",
+              "而且这次运行会带着环境快照进 EcoAI 的账本，之后查得到「这个结果是怎么来的」。",
             schema: {
               type: "object",
               properties: {
@@ -96,7 +96,7 @@ export function 工具清单(有内核: boolean): 网关工具[] {
     {
       name: "dawn_list_skills",
       description:
-        "列出当前项目里可用的 Agent Skills（DAWN 管理的技能，含项目级、全局与自带三处）。返回名字、说明与文件路径。",
+        "列出当前项目里可用的 Agent Skills（EcoAI 管理的技能，含项目级、全局与自带三处）。返回名字、说明与文件路径。",
       schema: 空参数,
     },
     {
@@ -112,7 +112,7 @@ export function 工具清单(有内核: boolean): 网关工具[] {
     },
     {
       name: "dawn_provenance",
-      description: "查一个产物是哪一次运行产生的（DAWN 的溯源账本）。",
+      description: "查一个产物是哪一次运行产生的（EcoAI 的溯源账本）。",
       schema: {
         type: "object",
         properties: { resourceId: { type: "string", description: "产物的路径或 id" } },
@@ -128,7 +128,7 @@ export function 工具清单(有内核: boolean): 网关工具[] {
     {
       name: "dawn_schedule_create",
       description:
-        "建一条 DAWN 定时任务：到点了会开一段全新的会话（跑在当前这段会话所在的项目 / 服务器上，用同一个 agent），把 prompt 发给它。" +
+        "建一条 EcoAI 定时任务：到点了会开一段全新的会话（跑在当前这段会话所在的项目 / 服务器上，用同一个 agent），把 prompt 发给它。" +
         "prompt 要自包含——那段会话记不得现在这段对话。计划四选一：daily（time）/ weekly（weekdays + time）/ interval（everyMinutes）/ once（at，ISO）/ monthly（day + time）/ everyDays（everyDays + start + time）。" +
         "当前会话是「拦危险的」档时，建出来是暂停的，要用户到「定时」里按恢复——告诉用户这一点。",
       schema: {
@@ -151,18 +151,18 @@ export function 工具清单(有内核: boolean): 网关工具[] {
     },
     {
       name: "dawn_schedule_list",
-      description: "列出 DAWN 的定时任务：名字、计划、下一次、上一次结果。",
+      description: "列出 EcoAI 的定时任务：名字、计划、下一次、上一次结果。",
       schema: 空参数,
     },
     {
       name: "dawn_schedule_delete",
-      description: "删一条 DAWN 定时任务（先用 dawn_schedule_list 拿 id）。运行记录留着。",
+      description: "删一条 EcoAI 定时任务（先用 dawn_schedule_list 拿 id）。运行记录留着。",
       schema: { type: "object", properties: { id: { type: "string" } }, required: ["id"], additionalProperties: false },
     },
     {
       name: "dawn_record_note",
       description:
-        "往 DAWN 的账本里记一条你的结论（例如「样本在 3 月之前有偏」）。它会挂在当前这一轮上，之后在项目历史里查得到。",
+        "往 EcoAI 的账本里记一条你的结论（例如「样本在 3 月之前有偏」）。它会挂在当前这一轮上，之后在项目历史里查得到。",
       schema: {
         type: "object",
         properties: { text: { type: "string", description: "要记下的一句话" } },
@@ -245,7 +245,7 @@ async function 干(
        * **「没有记录」不是错误**，是一个答案——这个产物不是 DAWN 跑出来的
        * （可能是人手放进去的）。说成错误会让模型以为是自己问错了。
        */
-      return { 文本: `账本里没有「${id}」的溯源记录——它可能不是 DAWN 产生的。` }
+      return { 文本: `账本里没有「${id}」的溯源记录——它可能不是 EcoAI 产生的。` }
     }
     return { 文本: `产生它的是 Run ${link.producingRunId}（记于 ${link.recordedAt ?? "未知时间"}）。` }
   }
@@ -317,5 +317,5 @@ async function 干(
     return { 文本: `删了 ${id}。运行记录留着。` }
   }
 
-  throw new Error(`DAWN 没有这个工具：${工具名}`)
+  throw new Error(`EcoAI 没有这个工具：${工具名}`)
 }

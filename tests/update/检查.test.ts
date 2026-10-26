@@ -14,11 +14,11 @@ const 一条 = (版本: string): 发布一条 => ({
   页面: `https://github.com/x/y/releases/tag/v${版本}`,
   发布于: "2026-09-06T00:00:00Z",
   资源: [
-    { name: `DAWN-Science-${版本}-mac-arm64.zip`, size: 223_317_849, url: "https://example.invalid/z" },
+    { name: `EcoAI-Science-${版本}-mac-arm64.zip`, size: 223_317_849, url: "https://example.invalid/z" },
   ],
 })
 
-const 事实: 平台事实 = { platform: "darwin", arch: "arm64", appPath: "/A/DAWN Science.app", 可写: () => true }
+const 事实: 平台事实 = { platform: "darwin", arch: "arm64", appPath: "/A/EcoAI.app", 可写: () => true }
 
 /** 记账的假发布源：**次数是判据** */
 const 假源 = (回: () => Promise<发布一条 | undefined>) => {

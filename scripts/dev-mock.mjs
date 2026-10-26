@@ -108,7 +108,7 @@ const workspace = join(dir, "workspace")
 mkdirSync(workspace, { recursive: true })
 
 // 工作区里放点东西，好让 agent 有文件可读——**空工作区证明不了工具能用**
-writeFileSync(join(workspace, "README.md"), "# Mock 工作区\n\n这是给 DAWN 的假模型演示用的目录。\n")
+writeFileSync(join(workspace, "README.md"), "# Mock 工作区\n\n这是给 EcoAI 的假模型演示用的目录。\n")
 writeFileSync(join(workspace, "note.txt"), "暗号：DAWN-MOCK-1f7c\n")
 
 const configPath = join(dir, "providers.yaml")
@@ -127,7 +127,7 @@ const modelsPath = join(dir, "models.json")
 writeFileSync(modelsPath, JSON.stringify(mockModelsJson(server.url), null, 2))
 
 console.log("─".repeat(64))
-console.log("DAWN mock 模式")
+console.log("EcoAI mock 模式")
 console.log(`  假推理服务器  ${server.url}`)
 console.log(`  固定回复      ${CANNED_REPLY}`)
 console.log(`  隔离目录      ${dir}`)

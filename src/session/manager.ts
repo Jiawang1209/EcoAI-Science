@@ -138,7 +138,7 @@ tools: read, bash
 **只读不写。** 你没有被授予写文件的工具。
 `
 
-const DAWN_README = `这个目录是 DAWN Science 建的，放这个项目的会话数据与子 agent 定义。
+const DAWN_README = `这个目录是 EcoAI 建的，放这个项目的会话数据与子 agent 定义。
 整个目录已经自我忽略（.dawn/.gitignore 里是一个 *），不会进你的 git。
 
 agents/

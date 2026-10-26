@@ -24,14 +24,14 @@ export async function openCliContext(agentId?: string, resume?: string | true) {
     const resumeSessionId = resume === true ? await chooseCliHistory(await listDesktopHistory(descriptor, process.cwd())) : resume
     return connectDesktopCli(descriptor, process.cwd(), process.env.DAWN_TERMINAL_ID, agentId, resumeSessionId)
   }
-  if (resume) throw new Error('历史恢复需要连接正在运行的 DAWN 桌面，请从 DAWN 内置终端使用 dawn --resume')
+  if (resume) throw new Error('历史恢复需要连接正在运行的 EcoAI 桌面，请从 EcoAI 内置终端使用 ecoai --resume')
   const home = resolve(process.env.DAWN_CLI_HOME || join(homedir(), '.dawn', 'cli'))
   const configPath = resolve(process.env.DAWN_CONFIG || join(home, 'providers.yaml'))
   const registry = loadRegistryOrDefault(configPath)
   const native = Object.entries(registry.agents).filter(([, def]) => def.kind === 'native')
   const selected = agentId || process.env.DAWN_AGENT || native.find(([, d]) => d.kind === 'native' && getEnvApiKey(d.provider))?.[0] || native[0]?.[0]
   const def = selected ? registry.agents[selected] : undefined
-  if (!selected || def?.kind !== 'native') throw new Error('请选择本地 API Agent：dawn --agent <配置里的名称>')
+  if (!selected || def?.kind !== 'native') throw new Error('请选择本地 API Agent：ecoai --agent <配置里的名称>')
   const providers = [...new Set(native.flatMap(([, d]) => d.kind === 'native' ? [d.provider] : []))]
   const key = (provider: string) => (provider === def.provider ? process.env.DAWN_API_KEY : undefined) || getEnvApiKey(provider)
   if (!key(def.provider)) throw new Error(`尚未配置 ${def.provider} 的 CLI 凭证。请设置该服务的标准 API key 环境变量，或 DAWN_API_KEY；配置文件：${configPath}`)

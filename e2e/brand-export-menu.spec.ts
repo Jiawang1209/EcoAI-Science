@@ -1,14 +1,19 @@
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readFileSync, realpathSync } from "node:fs"
 import { join } from "node:path"
 import { test, expect, 开一段临时会话 } from "./fixtures.js"
 
-test("DAWN Science与折叠、快捷键按钮始终单行，展开侧栏加宽并对齐", async ({ dawn }, info) => {
-  const { page } = dawn
+test("EcoAI-Science与折叠、快捷键按钮始终单行，展开侧栏加宽并对齐", async ({ dawn }, info) => {
+  const { page, app, dir } = dawn
+  await expect(page).toHaveTitle("EcoAI")
+  await expect(page.locator(".topbar .brand-name")).toHaveText("EcoAI-Science")
+  expect(await app.evaluate(({ app }) => app.getName())).toBe("EcoAI")
+  expect(realpathSync(await app.evaluate(({ app }) => app.getPath("userData")))).toBe(realpathSync(join(dir, "electron-user-data")))
+  await page.screenshot({ animations: "disabled", path: info.outputPath("ecoai-home.png") })
   await 开一段临时会话(page, "校正500米8月数据偏差")
   const check = async () => {
     const name = page.locator(".topbar .brand > span")
     await expect(name).toBeVisible()
-    await expect(name).toHaveText("DAWN Science")
+    await expect(name).toHaveText("EcoAI-Science")
     expect(await name.evaluate(el => getComputedStyle(el).whiteSpace)).toBe("nowrap")
     const nameBox = (await name.boundingBox())!
     expect(nameBox.height).toBeLessThan(32)

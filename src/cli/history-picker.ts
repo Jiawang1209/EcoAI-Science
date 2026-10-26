@@ -4,7 +4,7 @@ import { plain } from './presentation.js'
 export class ResumeCancelled extends Error {}
 export async function chooseCliHistory(entries: readonly CliHistoryEntry[]): Promise<string> {
   if (!entries.length) throw new Error('当前目录没有可恢复的历史会话')
-  if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('非交互输入请使用 dawn --resume <完整会话ID>')
+  if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('非交互输入请使用 ecoai --resume <完整会话ID>')
   const controller = new AbortController(), cancel = () => controller.abort()
   const rl = createInterface({ input: process.stdin, output: process.stdout })
   process.on('SIGINT', cancel); rl.on('SIGINT', cancel)

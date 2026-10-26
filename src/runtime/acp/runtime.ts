@@ -476,7 +476,7 @@ export class AcpRuntime implements AgentRuntime {
        * （量过：specs/2026-08-20-acp-terminal-design.md §一）。codex-acp 不看，照旧。
        */
       clientCapabilities: { fs: { readTextFile: true, writeTextFile: true }, terminal: true },
-      clientInfo: { name: "DAWN Science", version: "0.0.1" },
+      clientInfo: { name: "EcoAI", version: "0.0.1" },
     }).catch((e: unknown) => {
       const 因 = e instanceof Error ? e.message : String(e)
       throw new UserFacingError(`ACP 握手失败：${因}${this.尾巴(段)}`)

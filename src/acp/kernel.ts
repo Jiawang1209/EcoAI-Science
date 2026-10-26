@@ -65,7 +65,7 @@ function 一条(e: 内核条目): string | undefined {
        * 不说的话模型会以为这一句什么都没产生，于是重跑一遍；
        * 把 base64 给它则是拿几百 KB 换一句「有张图」。
        */
-      return `[${r.mediaType}，${r.bytes ?? 0} 字节，已经在 DAWN 里画出来了]`
+      return `[${r.mediaType}，${r.bytes ?? 0} 字节，已经在 EcoAI 里画出来了]`
     }
     return r.data
   }
@@ -116,7 +116,7 @@ export function 建跑内核(装配: 内核装配) {
      */
     if (!agentId) {
       throw new Error(
-        `这台 DAWN 没有配 ${language} 的内核 agent，跑不了。（配置里要有一个 kind: kernel、language: ${language} 的 agent）`,
+        `这台 EcoAI 没有配 ${language} 的内核 agent，跑不了。（配置里要有一个 kind: kernel、language: ${language} 的 agent）`,
       )
     }
     const 归 = 装配.归属(sessionId)
@@ -138,7 +138,7 @@ export function 建跑内核(装配: 内核装配) {
 
     const 收到: string[] = []
     const 前情 = 上次超时的.delete(内核)
-      ? "[DAWN] 上一次在这段内核上等超时了，那一句可能还在跑——下面这些输出里可能混着它的尾巴。\n"
+      ? "[EcoAI] 上一次在这段内核上等超时了，那一句可能还在跑——下面这些输出里可能混着它的尾巴。\n"
       : ""
     let 出错 = false
     let 跑起来了 = false
@@ -150,7 +150,7 @@ export function 建跑内核(装配: 内核装配) {
           [
             前情,
             ...收到,
-            `[DAWN] 等了 ${Math.round((装配.超时毫秒 ?? 120_000) / 1000)} 秒它还没跑完，先把已经出来的给你。` +
+            `[EcoAI] 等了 ${Math.round((装配.超时毫秒 ?? 120_000) / 1000)} 秒它还没跑完，先把已经出来的给你。` +
               "内核还在跑，变量之后还在。",
           ].join(""),
           true,
