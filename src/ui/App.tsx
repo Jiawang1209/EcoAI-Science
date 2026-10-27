@@ -135,7 +135,7 @@ import { ContentSearchResults, type 搜到的一段, type 搜到的一处 } from
 import { 拆词, type 跳转目标 } from "../protocol/search-match.js"
 import { $kernels, setKernels as setKernelsAtom, setQueued } from "./state/transcript.js"
 import { NotebookPanel, type 语言 as 内核语言 } from "./notebook.js"
-import { SetupWizard, 读跳过, 记跳过, type 探测结果 } from "./setup-wizard.js"
+import { SetupWizard, 读跳过, 记跳过, 读引导完成, 记引导完成, type 探测结果 } from "./setup-wizard.js"
 import { 对话agent顺序 } from "./agent-order.js"
 import { MemoryPanel } from "./memory-panel.js"
 import { buildCommands, type Actions } from "./commands.js"
@@ -377,6 +377,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
    * 那种漏法在界面上表现为半中半英，比丢一次菜单状态难查得多。
    *
    * 草稿不会丢：它住在 `$drafts` 这个 store 里，不在组件里。
+   * 首次设置期间保持外壳身份稳定：向导自身订阅语言，切换时保留步骤、Key 草稿与检测结果。
    */
   const lang = useStore($lang)
   /** 搜索浮层的短期状态留在 App；关闭清空查询与模式，不影响侧栏分区。 */
@@ -1074,6 +1075,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
    * 全新安装的机器上向导从来没亮过。
    */
   const [跳过向导, 设跳过向导] = useState(读跳过)
+  const [向导起点, 设向导起点] = useState<"welcome" | "key">(() => 读引导完成() ? "key" : "welcome")
   /**
    * 向导一旦因「没凭证」亮起，就留到人按「开始使用」或「先跳过」——key 保存成功那一瞬不能把它抽走
    * （e2e 抓的：第 ② 段解释器还没来得及选，屏幕就换了）。
@@ -1083,19 +1085,14 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
     if (没有钥匙 && !跳过向导) 设向导中(true)
   }, [没有钥匙, 跳过向导])
   const 探测解释器 = useCallback(() => client.get<探测结果>("probeInterpreters", {}), [client])
-  const saveInterpreter = useCallback(
-    (language: "python" | "R", path: string) => {
-      client
-        .get<{ python?: string; r?: string; problem?: string }>("setInterpreter", { language, path })
-        .then((r) => {
-          setInterpreters({ ...(r.python ? { python: r.python } : {}), ...(r.r ? { r: r.r } : {}) })
-          // **当场把问题说出来**：保存成功却用不了，比直接说不行更糟
-          if (r.problem) fail(new Error(r.problem))
-        })
-        .catch(fail)
-    },
-    [client],
-  )
+  const 存解释器 = useCallback(async (language: "python" | "R", path: string) => {
+    const r = await client.get<{ python?: string; r?: string; problem?: string }>("setInterpreter", { language, path })
+    setInterpreters({ ...(r.python ? { python: r.python } : {}), ...(r.r ? { r: r.r } : {}) })
+    if (r.problem) throw new Error(r.problem)
+  }, [client])
+  const saveInterpreter = useCallback((language: "python" | "R", path: string) => {
+    void 存解释器(language, path).catch(fail)
+  }, [存解释器])
   // 设置在场就取——窄栏也算（2026-09-28：此前只认整页，而窄栏打开时会把 view 切走，窄栏里的「内核」从没刷新过）
   useEffect(() => {
     if (!设置在场) return
@@ -2147,6 +2144,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
   const [knownProviders, setKnownProviders] = useState<{
     providers: string[]
     models?: Record<string, string[]>
+    endpointDefaults?: NonNullable<ResponseOf<"listKnownProviders">["endpointDefaults"]>
     needsBaseUrl?: string[]
     anthropicProtocol?: string[]
     connections?: Record<string, { baseUrl?: string; api?: string; models?: string[] }>
@@ -5136,7 +5134,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
     )
   })() : null
   return (
-    <div className="app-shell" key={lang} data-sidebar-collapsed={sidebarCollapsed} style={{ "--dawn-sidebar-content-w": `${sidebarWidth}px` } as React.CSSProperties}>
+    <div className="app-shell" key={向导中 && !跳过向导 ? "setup" : lang} data-sidebar-collapsed={sidebarCollapsed} style={{ "--dawn-sidebar-content-w": `${sidebarWidth}px` } as React.CSSProperties}>
       <div className="topbar">
         <div className="topbar-navigation">
         {/**
@@ -5719,8 +5717,22 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
             </>
           ) : 向导中 && !跳过向导 ? (
             <SetupWizard
+              key={向导起点}
+              initialStep={向导起点}
               providers={knownProviders.providers}
               configured={creds.configured}
+              modelCatalog={knownProviders.models}
+              endpointDefaults={knownProviders.endpointDefaults}
+              connections={knownProviders.connections}
+              needsBaseUrl={knownProviders.needsBaseUrl}
+              onTest={(req) => client.get<测试回话>("testProviderKey", req)}
+              onSaveConnection={async (providerId, conn) => {
+                await client.get("setProviderConnection", { providerId, ...conn })
+                await Promise.all([
+                  client.get<typeof knownProviders>("listKnownProviders", {}).then(setKnownProviders),
+                  loadProviders(client),
+                ])
+              }}
               problem={knownProviders.problem}
               plaintext={creds.encrypted === false}
               broken={creds.broken}
@@ -5733,14 +5745,16 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                   .then(() => Promise.all([loadCredentials(client), loadProviders(client)]))
                   .then(() => undefined)
               }
-              onSetInterpreter={saveInterpreter}
+              onSetInterpreter={存解释器}
               onProbe={探测解释器}
               onSkip={() => {
+                记引导完成()
                 记跳过(true)
                 设跳过向导(true)
                 设向导中(false)
               }}
               onStart={() => {
+                记引导完成()
                 记跳过(true)
                 设跳过向导(true)
                 设向导中(false)
@@ -6312,6 +6326,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
             className="caveat statusbar-setup"
             onClick={() => {
               // 回到向导（2026-08-27）：跳过了的人从这里回来；也把主区切回对话那一侧
+              设向导起点("key")
               记跳过(false)
               设跳过向导(false)
               setView("conversation")

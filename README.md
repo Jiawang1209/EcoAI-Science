@@ -76,6 +76,10 @@ EcoAI-Science（简称 EcoAI）是一款面向生态学研究的本地 AI-Agent 
 | Windows | 使用安装器或便携版；可能出现 SmartScreen 提示。仍需 Windows 真机验收，不能把生成安装包等同于已验证兼容 |
 | Linux | 使用对应架构的 AppImage 或 `.deb`；具体系统依赖见[打包与发布](docs/打包与发布.md) |
 
+首次启动通过四张居中卡片依次介绍 EcoAI、主要功能、API 连接和可选的 Python/R 计算环境，背景工作台虚化。向导可切换中文或 English，并沿用到工作台。默认选择 DeepSeek；切换服务商自动填入目录地址，也可手填 URL、模型和协议，并在保存前测试连通。解释器可检测或手填路径，配置失败在卡片内提示；两项配置都可稍后到设置中补充。已完成或跳过设置的用户不会重复看到介绍。
+
+First launch introduces EcoAI through four centered cards: welcome, features, AI connection, and optional Python/R setup. Choose 中文 or English; the workbench keeps that preference. Provider URLs fill automatically, custom endpoints support model and protocol selection, and you can test connectivity before saving. Interpreter setup is optional, with errors shown in the guide. Both configurations can be completed later in Settings.
+
 桌面安装包自带应用运行时，日常使用不要求另装 Node.js。按功能准备外部环境：
 
 | 使用场景 | 需要准备 |
