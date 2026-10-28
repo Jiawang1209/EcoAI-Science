@@ -1,3 +1,4 @@
+import { recentWorkspacePaths, type WorkspaceMenuData } from "./workspace-menu.js"
 import { $workspaceFolders, addWorkspaceFolder, removeWorkspaceFolder } from "./state/sidebar.js"
 import type { TerminalAgentState } from '../protocol/terminal.js'
 import { TransferConfirmationDetails } from "./transfer-confirmation.js"
@@ -17,6 +18,8 @@ import { $routeTurnMarker } from "./state/route-activity.js"
 import { activeRouteStep } from "./route-map-model.js"
 import { 标记待回答, $待回答的会话 } from "./state/catalog.js"
 import { StatusNotices } from "./status-notices.js"
+import { AppStatusBar } from "./app-statusbar.js"
+import { 拆模型名 } from "./format.js"
 /**
  * 外壳。
  *
@@ -1065,9 +1068,13 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
    * **没配的那个是 undefined**，界面据此显示「还没配置」而不是一个空串。
    */
   const [interpreters, setInterpreters] = useState<{ python?: string; r?: string }>({})
+  const [interpreterRead, setInterpreterRead] = useState<{ loaded: boolean; error?: string }>({ loaded: false })
   const refreshInterpreters = useCallback(() => {
-    client.get<{ python?: string; r?: string }>("getInterpreters", {}).then(setInterpreters).catch(fail)
+    client.get<{ python?: string; r?: string }>("getInterpreters", {}).then(paths => {
+      setInterpreters(paths); setInterpreterRead({ loaded: true })
+    }).catch(error => setInterpreterRead({ loaded: false, error: error instanceof Error ? error.message : String(error) }))
   }, [client])
+  useEffect(() => { if (ready) refreshInterpreters() }, [ready, refreshInterpreters])
   /**
    * 首启向导（2026-08-27）：没有任何凭证、且没点过「先跳过」时替换主区。
    * 判据与底部红字同一条（`没有钥匙`）：目录与凭证**都回来了**且没有凭证。
@@ -1088,6 +1095,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
   const 存解释器 = useCallback(async (language: "python" | "R", path: string) => {
     const r = await client.get<{ python?: string; r?: string; problem?: string }>("setInterpreter", { language, path })
     setInterpreters({ ...(r.python ? { python: r.python } : {}), ...(r.r ? { r: r.r } : {}) })
+    setInterpreterRead({ loaded: true })
     if (r.problem) throw new Error(r.problem)
   }, [client])
   const saveInterpreter = useCallback((language: "python" | "R", path: string) => {
@@ -1820,7 +1828,11 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
    */
   const 选工作目录 = async (taskId: string) => {
     const ws = await client.pickDirectory(默认工作区?.path)
-    if (!ws) return
+    if (ws) await 选用工作目录(taskId, ws)
+  }
+  const 选用工作目录 = async (taskId: string, ws: string | undefined) => {
+    // Default is a fresh temporary task, never a rehome of an existing project's history.
+    if (ws === undefined) { 回到初始画面(); return }
     const 现在 = tasks.find((x) => x.taskId === taskId)?.workspace
     if (现在 === ws) return
     if (现在) {
@@ -1839,20 +1851,27 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
   const [默认工作区, 设默认工作区状态] = useState<{ path: string; isDefault: boolean } | undefined>(
     undefined,
   )
-  useEffect(() => {
-    if (!ready) return
-    client
-      .get<{ path: string; isDefault: boolean }>("getDefaultWorkspace", {})
-      .then(设默认工作区状态)
-      .catch(() => {
-        /** **读不到就不显示那一格**，不摆一个猜出来的路径——那会指错地方 */
-      })
-  }, [client, ready])
+  const [默认工作区错误, 设默认工作区错误] = useState<string>()
+  const 读取默认工作区 = useCallback(async () => {
+    try {
+      const value = await client.get<{ path: string; isDefault: boolean }>("getDefaultWorkspace", {})
+      设默认工作区状态(value); 设默认工作区错误(undefined)
+    } catch (error) {
+      设默认工作区状态(undefined)
+      设默认工作区错误(error instanceof Error ? error.message : String(error))
+    }
+  }, [client])
+  useEffect(() => { if (ready) void 读取默认工作区() }, [ready, 读取默认工作区])
+  const 工作目录菜单: WorkspaceMenuData = {
+    defaultPath: 默认工作区?.path, recentPaths: recentWorkspacePaths(tasks), error: 默认工作区错误,
+    onOpen: () => { void 读取默认工作区() },
+  }
   const 设默认工作区 = async (path: string) => {
     try {
       设默认工作区状态(
         await client.get<{ path: string; isDefault: boolean }>("setDefaultWorkspace", { path }),
       )
+      设默认工作区错误(undefined)
     } catch (e) {
       fail(e)
     }
@@ -2919,7 +2938,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
    * 后者正是作者上一轮报过的「历史遗留的删不掉」，这里从一开始就避开。
    */
   const askDeleteProjects = useCallback(
-    (
+    async (
       groups: readonly {
         workspace: string
         projectId?: string
@@ -2933,6 +2952,9 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
       const 会话数 = groups.reduce((n, g) => n + g.tasks.length, 0)
       const 整个的 = groups.filter((g) => g.整个 !== false)
       const 只删几段 = 整个的.length < groups.length
+      const retainedImpacts=new Map<string,{count:number;bytes:number;revision:string}>()
+      try{for(const g of 整个的)if(g.projectId){const impact=await client.get<{retained?:{count:number;bytes:number;revision:string}}>('deletionImpact',{projectId:g.projectId});if(impact.retained)retainedImpacts.set(g.projectId,impact.retained)}}catch(e){note(e instanceof Error?e.message:String(e));return}
+      const retainedCount=[...retainedImpacts.values()].reduce((n,r)=>n+r.count,0),retainedBytes=[...retainedImpacts.values()].reduce((n,r)=>n+r.bytes,0)
       setConfirming({
         // **按实际发生的事起标题**：只勾了几段会话时，说「删对话」，不说「移除项目」
         title: 只删几段
@@ -2946,6 +2968,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                 ? tf("其中 {0} 个项目名下的对话全选了，会连项目一起从工作台移除。", 整个的.length)
                 : t("会一并删除相应的账本记录。项目本身留着。")
               : tf("会一并移除它们名下的 {0} 段对话与相应的账本记录。", 会话数)}
+            {retainedCount?<p>{tf("还会删除应用内的 {0} 组关键结果留存（{1} MiB）。工作区原文件保留。",retainedCount,(retainedBytes/1024/1024).toFixed(2))}</p>:null}
           </>
         ),
         safety: (
@@ -2966,7 +2989,8 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
             for (const g of groups) {
               try {
                 if (g.projectId && g.整个 !== false) {
-                  await client.get("deleteProject", { projectId: g.projectId })
+                  const retained=retainedImpacts.get(g.projectId)
+                  await client.get("deleteProject", { projectId: g.projectId,...(retained?.count?{deleteRetained:true,retainedRevision:retained.revision}:{}) })
                   // 整个项目没了：坞里挂的若是这个项目的，它也没了（任务清单未必列全这个项目的会话）
                   const 那处 = `p:${g.projectId}`
                   if ($侧边地方.get() === 那处) 删掉的.push($侧边会话id.get())
@@ -3009,7 +3033,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
     if (!pid) return
     const 名 = projects.find((p) => p.projectId === pid)?.name ?? pid
     client
-      .get<{ sessions: number; runs: number; workspace: string }>("deletionImpact", { projectId: pid })
+      .get<{ sessions: number; runs: number; workspace: string;retained?:{count:number;bytes:number;revision:string} }>("deletionImpact", { projectId: pid })
       .then((impact) => {
         setConfirming({
           title: tf("从工作台移除项目「{0}」？", 名),
@@ -3020,6 +3044,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                 impact.sessions,
                 impact.runs,
               )}
+              {impact.retained?.count?<p>{tf("还会删除应用内的 {0} 组关键结果留存（{1} MiB）。工作区原文件保留。",impact.retained.count,(impact.retained.bytes/1024/1024).toFixed(2))}</p>:null}
             </>
           ),
           safety: (
@@ -3032,7 +3057,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
           confirmLabel: t("移除项目"),
           onConfirm: () => {
             client
-              .get("deleteProject", { projectId: pid })
+              .get("deleteProject", { projectId: pid,...(impact.retained?.count?{deleteRetained:true,retainedRevision:impact.retained.revision}:{}) })
               .then(() => {
                 removeWorkspaceFolder(impact.workspace)
                 设刚选的工作区(current => current === impact.workspace ? undefined : current)
@@ -3395,12 +3420,12 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
     return currentProvider ? serviceLabel(currentProvider) : undefined
   }
 
-  // 跟随主区正在使用的服务；中途换模型后优先读取会话值。
-  const 状态栏模型名 = session
-    ? currentServiceLabelOf(session) ?? (agentCfgOf(session) ? agentLabel(session.agentId) : undefined)
-    : !没有钥匙 && agentIds[0] ? agentLabel(agentIds[0]) : undefined
-  const 连接说明 = !ready ? t("未连接")
-    : 状态栏模型名 ? tf("已连接 {0}", 状态栏模型名) : t("未配置任何模型")
+  const 状态栏agent = session ? agentCfgOf(session) : providers.agents.find(a => a.agentId === agentIds[0])
+  const 状态栏模型 = session ? currentModelOf(session) : 状态栏agent?.model ? { model: 状态栏agent.model, provider: 状态栏agent.provider } : undefined
+  const 状态栏模型选项 = session?.kind === 'acp' ? 主区开关们?.find(o => o.category === 'model') : undefined
+  const 状态栏模型选中 = 状态栏模型选项?.options.find(o => o.value === 状态栏模型选项.current)
+  const 状态栏模型名 = 状态栏模型选中 ? 拆模型名(状态栏模型选中.name, 状态栏模型选中.description).主
+    : 状态栏模型?.model ?? (状态栏agent ? agentLabel(状态栏agent.agentId) : undefined)
 
   /**
    * 能选哪些模型。**所有配好的服务 × 各自的模型**（2026-08-12 放开）。
@@ -3676,9 +3701,9 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
   const [刚选的工作区, 设刚选的工作区] = useState<string | undefined>(undefined)
 
   // 两个入口共用选目录、注册项目与刷新列表；添加工作区不切换会话或清空草稿。
-  async function chooseWorkspaceDirectory(): Promise<{ path: string; projectId: string } | null> {
+  async function chooseWorkspaceDirectory(selected?: string): Promise<{ path: string; projectId: string } | null> {
     try {
-      const path = await client.pickDirectory(默认工作区?.path)
+      const path = selected ?? await client.pickDirectory(默认工作区?.path)
       if (!path) return null
       const project = await client.get<{ projectId: string }>("openProject", { workspace: path })
       await loadProjects(client)
@@ -3841,6 +3866,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
         onToggle={切展开}
         content={fileContent}
         loadDir={loadDir}
+        readFile={读产物}
         search={searchFiles}
         路径={行路径}
         {...(sessionId ? { onInsert: 插进输入框 } : {})}
@@ -4165,7 +4191,8 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
   // 项目切换的首帧即隔离旧名册；新请求失败时也不能套用另一项目的同名角色。
   const 子agent名册 = useMemo(() => 子agent名册快照?.projectId === projectId ? 子agent名册快照?.agents ?? [] : [], [子agent名册快照, projectId])
   /** 侧栏「Agent Skills」后面那个数：开着的（不含「关」了的） */
-  const [技能数, 设技能数] = useState<number | undefined>(undefined)
+  const [技能计数, 设技能计数] = useState<{ projectId: string | undefined; count: number }>()
+  const 技能数 = 技能计数?.projectId === projectId ? 技能计数?.count : undefined
   /**
    * 「扩展」那一组的行尾计数（2026-09-16，作者要的）。
    *
@@ -4180,7 +4207,8 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
    * `|| undefined` 是因为那边 0 的意思是「没有待确认」，是另一个问题，两处口径
    * 不同不是疏漏。
    */
-  const [MCP开着数, 设MCP开着数] = useState<number | undefined>(undefined)
+  const [MCP计数, 设MCP计数] = useState<{ projectId: string | undefined; count: number }>()
+  const MCP开着数 = MCP计数?.projectId === projectId ? MCP计数?.count : undefined
   const [插件开着数, 设插件开着数] = useState<number | undefined>(undefined)
   /** 设置「记忆」入口的待确认角标(建议 + 待装技能;0 = 不显示) */
   const [记忆待确认数, 设记忆待确认数] = useState<number | undefined>(undefined)
@@ -4210,16 +4238,16 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
     client
       .get<SkillLoad>("listSubagents", projectId ? { projectId } : {})
       .then((r) => 还在 && 设子agent名册({projectId, agents: r.agents.filter((a) => !a.disabled).map((a) => ({ name: a.name, description: a.description, ...(a.title ? { title: a.title } : {}), ...(a.group ? { group: a.group } : {}) }))}))
-      .catch(() => {})
+      .catch(() => { if (还在) 设子agent名册(undefined) })
     client
       .get<AgentSkill装载>("listAgentSkills", projectId ? { projectId } : {})
       .then((r) => {
         if (!还在) return
         const 开着的 = r.skills.filter((x) => x.invocation !== "off")
-        设技能数(开着的.length)
+        设技能计数({ projectId, count: 开着的.length })
         设技能单(开着的.map((x) => ({ kind: "skill" as const, name: x.name, description: x.description })))
       })
-      .catch(() => {})
+      .catch(() => { if (还在) { 设技能计数(undefined); 设技能单([]) } })
     client
       .get<{ pending: number }>("memoryOverview", 当前工作区路径 ? { workspace: 当前工作区路径 } : {})
       .then((r) => 还在 && 设记忆待确认数(r.pending))
@@ -4227,14 +4255,14 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
     // MCP / 插件这两发**读的是 `载MCP` / `载插件`**（不是各自另写一份 `client.get`）——
     // MCP 屏、插件屏与这一发是同一个接口的三处调用点，各写各的迟早会漂移（2026-09-16 审查抓的）。
     // 这两发失败要出声（`console.error`），跟旁边三发的静默 `.catch(() => {})` 不一样：
-    // 数字读不到时那一行就干脆不显示（`count` 传 `undefined`），界面上看不出异常，
+    // 数字读不到时设置项不显示数字，底部状态栏显示横线（`count` 传 `undefined`），
     // 不出声就真的没人知道——这是评审过的取舍，不是疏漏。
     载MCP()
-      .then((r) => 还在 && 设MCP开着数(r.servers.filter((s) => !s.off).length))
-      .catch((e: unknown) => console.error("[设置] MCP 台数读不到，那一行就不显示数字：", e))
+      .then((r) => 还在 && 设MCP计数({ projectId, count: r.servers.filter((s) => !s.off).length }))
+      .catch((e: unknown) => { if (还在) 设MCP计数(undefined); console.error("[设置] MCP 台数读取失败：", e) })
     载插件()
       .then((r) => 还在 && 设插件开着数(r.plugins.filter((p) => p.on).length))
-      .catch((e: unknown) => console.error("[设置] 插件数读不到，那一行就不显示数字：", e))
+      .catch((e: unknown) => { if (还在) 设插件开着数(undefined); console.error("[设置] 插件数读取失败：", e) })
     // **`名册代` 也覆盖 MCP / 插件**：拨信任、拨「先别连它」、增删服务器、开关插件都
     // 走 `名册变了()`（同一条「名册动过了」频道，技能/子agent/记忆早就在用）。
     // 代价是那三个也会跟着重取一遍——`MemoryPanel` 已经在付这个代价，不是新债，
@@ -5703,7 +5731,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                      * 没有账本、agent 的手还没伸出去。那时它只是「我改主意了」，
                      * 不是一扇反向的门。
                      */
-                    { onPickWorkspace: () => void 选工作目录(当前任务.taskId) }
+                    { onPickWorkspace: () => void 选工作目录(当前任务.taskId), workspaceMenu: 工作目录菜单, onSelectWorkspace: (path: string | undefined) => 选用工作目录(当前任务.taskId, path) }
                   : {})}
                 onPickAgent={(id) => {
                   void 换运行时另起一段(id).catch(fail)
@@ -5849,8 +5877,9 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                *
                * **取消就什么都不做**：改主意不是错误。
                */
-              onPickDirectory={async () => {
-                const picked = await chooseWorkspaceDirectory()
+              workspaceMenu={工作目录菜单}
+              onPickDirectory={async (path) => {
+                const picked = await chooseWorkspaceDirectory(path)
                 if (!picked) return null
                 setActiveProjectId(picked.projectId)
                 设刚选的工作区(picked.path)
@@ -6175,7 +6204,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                 cells={笔记本cells}
                 running={笔记本在跑}
                 error={笔记本错}
-                onRun={async (language: 内核语言, code: string) => {
+                onRun={async (language: 内核语言, code: string, inputPaths?: string[]) => {
                   if (!sessionId) throw new Error("没有会话，跑不了")
                   /**
                    * **收尾只认当时的会话**（审查 2026-08-26）：`await` 期间人可能已切到别的会话，
@@ -6186,7 +6215,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                   设笔记本在跑(true)
                   设笔记本错(undefined)
                   try {
-                    await client.get<{ cellId: string }>("runInKernel", { sessionId, language, code })
+                    await client.get<{ cellId: string }>("runInKernel", { sessionId, language, code, ...(inputPaths?.length?{inputPaths}:{}) })
                   } finally {
                     if ($activeSessionId.get() === 当时) 设笔记本在跑(false)
                   }
@@ -6312,34 +6341,43 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
       {/* 命令面板。**放在最外层**——它盖住整个窗口，且要在任何视图下都能叫出来 */}
       <CommandPalette commands={commands} />
 
-      <div className="statusbar">
-        <span>{连接说明}</span>
-        {没有钥匙 ? (
-          /**
-           * **不说「native agent」。** 那是我们内部的词，作者已经为它抱怨过一次
-           * （*「为什么还会多一个新建 agent 这种奇怪的东西呢？」*）。
-           * 这一行要说的是他关心的事实：还没有钥匙，所以还不能对话。
-           */
-          <Button
-            variant="text"
-            size="inline"
-            className="caveat statusbar-setup"
-            onClick={() => {
-              // 回到向导（2026-08-27）：跳过了的人从这里回来；也把主区切回对话那一侧
-              设向导起点("key")
-              记跳过(false)
-              设跳过向导(false)
-              setView("conversation")
-            }}
-          >
-            {t("还没有填任何 API key，暂时不能对话——点这里填一个")}
-          </Button>
-        ) : null}
-        <StatusNotices notes={notes} />
-          {更新回执 ? (
-            <span className="brand-version">v{更新回执.状态.当前.replace(/^v/, "")}</span>
-          ) : null}
-      </div>
+      <AppStatusBar
+        model={状态栏模型名 ? { name: 状态栏模型名, providerId: 状态栏模型?.provider,
+          provider: 状态栏模型?.provider ? serviceLabel(状态栏模型.provider) : undefined,
+          kind: 状态栏agent?.kind === 'native' ? 'API' : 状态栏agent?.kind?.toUpperCase(),
+        } : undefined}
+        environment={{
+          scopeId: session?.remote?.connectionId ?? 'local',
+          label: session?.remote ? connections.find(c => c.id === session.remote!.connectionId)?.label ?? session.remote.connectionId : t("本机"),
+          paths: session?.remote
+            ? (connections.find(c => c.id === session.remote!.connectionId) ? connections.find(c => c.id === session.remote!.connectionId)?.interpreters ?? {} : undefined)
+            : interpreterRead.loaded ? interpreters : undefined,
+          error: !ready ? t("未连接") : session?.remote
+            ? connections.some(c => c.id === session.remote!.connectionId) ? undefined : t("未找到当前会话的服务器配置")
+            : interpreterRead.error,
+          kernels: session ? 对话内核 : undefined,
+          probe: () => client.get<探测结果>("probeInterpreters", session?.remote ? { connectionId: session.remote.connectionId } : {}),
+          configure: () => {
+            if (!session?.remote) { 开设置栏('kernels'); return }
+            const c = connections.find(c => c.id === session.remote!.connectionId)
+            if (!c) { note(t("未连接")); return }
+            setConnIntent("edit"); setConnProblem(undefined); setConnProblemId(undefined)
+            setConnDraft({ id: c.id, label: c.label, group: c.group, host: c.host, port: c.port, username: c.username, privateKeyPath: c.privateKeyPath, hasSecret: c.hasSecret })
+          },
+        }}
+        counts={{ plugins: 插件开着数, skills: 技能数, mcp: MCP开着数,
+          subagents: 子agent名册快照?.projectId === projectId ? 子agent名册快照?.agents.length : undefined }}
+        scopeLabel={projectId ? projects.find(p => p.projectId === projectId)?.name ?? t("当前项目") : t("全局")}
+        version={更新回执?.状态.当前}
+        onOpenSettings={id => 开设置栏(id)}
+        alerts={<>
+          {!ready ? <span role="status">{t("未连接")}</span> : null}
+          {没有钥匙 ? <Button variant="text" size="inline" className="caveat statusbar-setup" onClick={() => {
+            设向导起点("key"); 记跳过(false); 设跳过向导(false); setView("conversation")
+          }}>{t("还没有填任何 API key，暂时不能对话——点这里填一个")}</Button> : null}
+          <StatusNotices notes={notes} />
+        </>}
+      />
     </div>
   )
 }

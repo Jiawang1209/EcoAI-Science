@@ -359,6 +359,7 @@ describe("MVP 主路径 · 给任务选工作目录", () => {
     const h = harness()
     render(<App client={h.client} />)
     fireEvent.click(await screen.findByRole("button", { name: /工作目录/ }))
+    fireEvent.click(await screen.findByRole("menuitem", { name: "另选文件夹…" }))
     await waitFor(() => expect(h.pickDirectory).toHaveBeenCalled())
 
     // 选完之后开口，任务就带着这个目录建出来
@@ -375,6 +376,7 @@ describe("MVP 主路径 · 给任务选工作目录", () => {
     const h = harness({ pick: null })
     render(<App client={h.client} />)
     fireEvent.click(await screen.findByRole("button", { name: /工作目录/ }))
+    fireEvent.click(await screen.findByRole("menuitem", { name: "另选文件夹…" }))
     await waitFor(() => expect(h.pickDirectory).toHaveBeenCalled())
 
     // chip 还写着「工作目录」——**没设就说没设**，不编一个出来
@@ -716,11 +718,10 @@ describe("PTY 会话：终端就是这个会话本身", () => {
    * 侧栏那一行是它的入口：**必须点得动**，否则又是一次
    * 「看不见/点不动的能力等于不存在」。
    */
-  it("添加菜单有终端入口，且是能点的", async () => {
+  it("输入栏有直接可见且能点的终端入口", async () => {
     const h = harness({ projects: [proj("/w/proj")] })
     render(<App client={h.client} />)
-    fireEvent.click(await screen.findByRole("button", { name: "添加内容" }))
-    const 入口 = await screen.findByRole("menuitem", { name: "终端面板" })
+    const 入口 = await screen.findByRole("button", { name: "终端面板" })
     expect((入口 as HTMLButtonElement).disabled).toBe(false)
   })
 })
@@ -747,7 +748,7 @@ describe("cli 会话也能换模型（①-C 后续）", () => {
     const h = cliHarness(["opus", "sonnet"])
     render(<App client={h.client} />)
     await 从首页开始()
-    expect(await screen.findByRole("button", { name: /sonnet/ })).toBeDefined()
+    expect(await screen.findByRole("button", { name: "当前模型：sonnet。点击切换" })).toBeDefined()
   })
 
   it("**没声明就不显示** —— 取不到就不假装有得选", async () => {
@@ -755,14 +756,14 @@ describe("cli 会话也能换模型（①-C 后续）", () => {
     render(<App client={h.client} />)
     await 从首页开始()
     await screen.findByPlaceholderText(/输入问题/)
-    expect(screen.queryByRole("button", { name: /sonnet|opus/ })).toBeNull()
+    expect(screen.queryByRole("button", { name: /当前模型：(sonnet|opus)。点击切换/ })).toBeNull()
   })
 
   it("**选一个之后走 setSessionModel，不是新建会话**", async () => {
     const h = cliHarness(["opus", "sonnet"])
     render(<App client={h.client} />)
     await 从首页开始()
-    fireEvent.click(await screen.findByRole("button", { name: /sonnet/ }))
+    fireEvent.click(await screen.findByRole("button", { name: "当前模型：sonnet。点击切换" }))
     fireEvent.click(await screen.findByRole("menuitem", { name: /opus/ }))
     await waitFor(() => expect(h.calls.some((c) => c.op === "setSessionModel")).toBe(true))
     // **不是新建**：会话数没变（顶上那颗 2026-08-11 起建的是临时会话）

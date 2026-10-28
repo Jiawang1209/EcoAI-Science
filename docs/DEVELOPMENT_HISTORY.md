@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-28 — 迁移 DAWN 最新成果留存、默认报告与工作台交互
+
+- **Type**: feat / fix
+- **What**: 在 `codex/dawn-recent-updates` 迁入 DAWN `846e1c35..83f0bf91` 的三组功能：成果来源与固定版本保留、Markdown/项目文件选择与分步脚本报告、输入区/工作目录/侧栏/状态栏/模型图标与快捷键。保留 EcoAI 品牌、版本和数据约定；补充交付副本在报告等待期被修改的大小/SHA 校验，以及同帧几何验收。
+- **Verification**: 完整 Vitest 三组 540 文件、5641 项通过、10 条件跳过；类型及完整构建通过；最终 104 项 Electron 和两轮消息几何回归通过，包含实际 Python/R 与固定副本交付。独立复审通过。见 `docs/reviews/2026-10-28-ecoai-dawn-recent-updates-verification.md`。
+- **Impact**: 仅新分支，未合并 main、推送、发布或替换安装版；新增数据库表仅在隔离测试资料迁移。来源记录不等于完整输入快照或科学正确性。
+
 ### 2026-10-26 — EcoAI-Science 0.0.2 纠正历史标签与发布来源
 
 - **Type**: fix / release

@@ -17,29 +17,38 @@ async function checkUsage(area: Locator, rounds: number) {
   expect(box.y).toBeGreaterThanOrEqual(card.y + card.height)
   expect(box.x).toBeGreaterThanOrEqual(card.x)
   expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width + 1)
-  const context = (await area.locator(".composer-session-usage .ctx-meter").boundingBox())!
-  expect(context.y).toBeGreaterThanOrEqual(card.y + card.height)
-  expect(context.x + context.width).toBeLessThanOrEqual(card.x + card.width + 1)
-  // 一行时文字与上下文按钮作为整体居中，窄栏换行则两行各自居中。
-  if (Math.abs(context.y - box.y) < 2) {
-    expect(Math.abs((box.x + context.x + context.width) / 2 - card.x - card.width / 2)).toBeLessThanOrEqual(1)
-  } else {
-    expect(Math.abs(box.x + box.width / 2 - card.x - card.width / 2)).toBeLessThanOrEqual(1)
-  }
+  const context = (await area.locator(".composer-controls > .ctx-meter").boundingBox())!
+  expect(context.y).toBeGreaterThanOrEqual(card.y)
+  expect(context.y + context.height).toBeLessThanOrEqual(card.y + card.height)
+  const model = (await area.locator(".composer-controls .model-pill").boundingBox())!
+  expect(context.x + context.width).toBeLessThanOrEqual(model.x + 1)
+  expect(Math.abs(box.x + box.width / 2 - card.x - card.width / 2)).toBeLessThanOrEqual(1)
 }
 async function checkActions(area: Locator) {
   const message = area.locator(".turn.user").last()
-  const time = message.locator(".turn-time")
-  expect(await time.evaluate(el => !!el.closest(".turn-actions"))).toBe(true)
-  const timestamp = (await time.boundingBox())!
-  const row = (await message.locator(".turn-actions").boundingBox())!
-  for (const control of await message.locator(".turn-actions button").all()) {
-    const b = (await control.boundingBox())!
+  // Read all geometry in one layout frame: resizing the dock can move the row
+  // between separate boundingBox IPC calls even when its controls are aligned.
+  const geometry = await message.evaluate(el => {
+    const time = el.querySelector<HTMLElement>(".turn-time")!
+    const rect = (node: Element) => {
+      const b = node.getBoundingClientRect()
+      return { x: b.x, y: b.y, width: b.width, height: b.height }
+    }
+    return {
+      attached: !!time.closest(".turn-actions"),
+      timestamp: rect(time),
+      row: rect(el.querySelector(".turn-actions")!),
+      buttons: Array.from(el.querySelectorAll(".turn-actions button"), rect),
+      body: rect(el.querySelector(".turn-body")!),
+    }
+  })
+  expect(geometry.attached).toBe(true)
+  const { timestamp, row, buttons, body } = geometry
+  for (const b of buttons) {
     expect(Math.abs(b.y + b.height / 2 - timestamp.y - timestamp.height / 2)).toBeLessThanOrEqual(1)
     expect(b.x).toBeGreaterThanOrEqual(row.x)
     expect(b.x + b.width).toBeLessThanOrEqual(row.x + row.width + 1)
   }
-  const body = (await message.locator(".turn-body").boundingBox())!
   expect(row.x).toBeGreaterThanOrEqual(body.x - 1)
   expect(row.x + row.width).toBeLessThanOrEqual(body.x + body.width + 1)
 }
@@ -49,7 +58,7 @@ test("会话统计跟随输入框下方，主区和280px侧边对话分别累计
   await 开一段临时会话(page)
   const main = page.locator("main.main")
   await expect(main.locator(".session-usage")).toHaveCount(0)
-  await expect(main.locator(".composer-session-usage .ctx-meter")).toBeVisible()
+  await expect(main.locator(".composer-controls > .ctx-meter")).toBeVisible()
   await say(main, "核查500米监测数据")
   await say(main, "继续检查异常值")
   await checkUsage(main, 2)

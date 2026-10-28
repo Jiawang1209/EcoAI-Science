@@ -1,3 +1,5 @@
+import { ArtifactHistoryPanel } from './artifact-history.js'
+import { ProjectFilePicker } from './project-file-picker.js'
 import { createPortal } from "react-dom";
 import {
   useEffect,
@@ -60,6 +62,10 @@ export const verificationLabel = (s: DeliveryRecord["verification"]["state"]) =>
     failed: t("运行验证失败"),
   })[s];
 export function AnalysisDeliveryPanel(p: Props) {
+  const [evidenceView,setEvidenceView]=useState<{path?:string}|undefined>()
+  const [moreOpen,setMoreOpen]=useState(false)
+  const [projectFilesOpen, setProjectFilesOpen] = useState(false)
+  useEffect(()=>{setEvidenceView(undefined);setMoreOpen(false);setProjectFilesOpen(false)},[p.scopeKey])
   const views = useStore($deliveryViews),
     view = views.get(p.scopeKey) ?? deliveryView(p.scopeKey);
   const [catalog, setCatalog] = useState<Catalog>(),
@@ -213,6 +219,7 @@ export function AnalysisDeliveryPanel(p: Props) {
         .map((s) => s.trim())
         .filter(Boolean),
       mode: view.mode,
+      ...(view.retained?.length?{retained:view.retained.filter(r=>view.selected.includes(r.path))}:{}),
     };
     const valid = DeliveryCreateSchema.safeParse(request);
     if (!valid.success) {
@@ -291,7 +298,21 @@ export function AnalysisDeliveryPanel(p: Props) {
       aria-label={t("分析交付")}
     >
       <header className="delivery-header">
-        {view.page === "files" || view.page === "records" ? (
+        {view.page === "files" ? (
+          <>
+            <strong>{t("结果")}</strong>
+            <div className="artifact-page-actions">
+              <Button variant="ghost" size="sm" aria-label={t("历史")} aria-pressed={Boolean(evidenceView)} onClick={()=>setEvidenceView({})}>{t("历史")}</Button>
+              <details className="artifact-more-menu" open={moreOpen} onToggle={e=>setMoreOpen(e.currentTarget.open)}>
+                <summary aria-label={t("产物操作菜单")}>{t("更多")}</summary>
+                {moreOpen ? <div className="artifact-more-menu-body">
+                  <Button variant="ghost" size="sm" disabled={!allowed||busy} onClick={()=>{setMoreOpen(false);setEvidenceView(undefined);beginDelivery(p.scopeKey);setError(undefined)}}>{t("整理交付")}</Button>
+                  <Button variant="ghost" size="sm" onClick={()=>{setMoreOpen(false);update({page:"records"})}}>{tf("交付记录 · {0}",catalog?.records.length??0)}</Button>
+                </div>:null}
+              </details>
+            </div>
+          </>
+        ) : view.page === "records" ? (
           <>
             <div>
               <strong>{t("本次分析产物")}</strong>
@@ -342,12 +363,12 @@ export function AnalysisDeliveryPanel(p: Props) {
           </>
         )}
       </header>
-      {view.page === "files" || view.page === "records" ? (
+      {view.page === "records" ? (
         <nav className="delivery-tabs" aria-label={t("产物视图")}>
           <Button
             variant="ghost"
             size="sm"
-            aria-pressed={view.page === "files"}
+            aria-pressed={false}
             onClick={() => update({ page: "files" })}
           >
             {t("文件清单")}
@@ -379,13 +400,22 @@ export function AnalysisDeliveryPanel(p: Props) {
       ) : null}
       <div className="delivery-body">
         {view.page === "files" ? (
-          <ArtifactsPanel {...p} />
+          <>
+            {evidenceView ? <ArtifactHistoryPanel key={p.scopeKey} sessionId={p.sessionId} client={p.client} paths={artifactEntries(p.data).map(a=>a.path)} readOnly={p.readOnly} onClose={()=>setEvidenceView(undefined)} onUseForDelivery={group=>{beginDelivery(p.scopeKey,group.members.map(m=>m.observation.path));update({name:group.name,retained:group.members.map(m=>({path:m.observation.path,retainedId:group.id,memberId:m.id,sha256:m.sha256}))});setEvidenceView(undefined)}} /> : <ArtifactsPanel {...p} renderPreviewActions={path=><ArtifactHistoryPanel key={`${p.scopeKey}:${path}`} sessionId={p.sessionId} client={p.client} paths={artifactEntries(p.data).map(a=>a.path)} path={path} readOnly={p.readOnly} onClose={()=>{}}/>} />}
+          </>
         ) : view.page === "select" ? (
           <>
-            <p className="hint">
+            {!projectFilesOpen ? <><p className="hint">
               {t("只采用你选定的文件；同名候选和草稿不会自动认定为最终结果。")}
             </p>
-            <div
+            <Button variant="outline" size="sm" disabled={!allowed} onClick={() => setProjectFilesOpen(true)}>{t("从项目添加文件")}</Button></> : null}
+            {projectFilesOpen ? <ProjectFilePicker key={p.scopeKey} sessionId={p.sessionId} client={p.client} selected={view.selected} onClose={() => setProjectFilesOpen(false)} onAdd={paths => {
+              if (!allowed) return
+              if (new Set([...view.selected, ...paths]).size > 60) { setError(t("每份交付最多选择 60 个文件")); return }
+              update({ candidates: [...new Set([...view.candidates, ...paths])], selected: [...new Set([...view.selected, ...paths])] })
+              setProjectFilesOpen(false)
+            }} /> : null}
+            {!projectFilesOpen ? <div
               className="delivery-selection"
               role="group"
               aria-label={t("交付文件选择")}
@@ -395,6 +425,7 @@ export function AnalysisDeliveryPanel(p: Props) {
                   <input
                     type="checkbox"
                     checked={view.selected.includes(path)}
+                    disabled={projectFilesOpen || !allowed || (view.selected.length >= 60 && !view.selected.includes(path))}
                     onChange={(e) =>
                       update({
                         selected: e.target.checked
@@ -410,11 +441,11 @@ export function AnalysisDeliveryPanel(p: Props) {
                   </span>
                 </label>
               ))}
-            </div>
-            {!candidates.length ? (
+            </div> : null}
+            {!projectFilesOpen && !candidates.length ? (
               <EmptyState
                 title={t("还没有可选择的产物")}
-                description={t("先完成分析，或从路线、Bot 的交付文件进入。")}
+                description={t("可从项目添加已有脚本、图片、表格和说明。")}
               />
             ) : null}
           </>
@@ -453,7 +484,7 @@ export function AnalysisDeliveryPanel(p: Props) {
                   <strong>{t("仅整理")}</strong>
                   <small>
                     {t(
-                      "读取已有结果，生成脚本、运行说明和结果解读；不运行分析。",
+                      "沿用分步脚本，整理调用说明、分析报告和选定结果；不运行分析。",
                     )}
                   </small>
                 </span>
@@ -492,7 +523,7 @@ export function AnalysisDeliveryPanel(p: Props) {
             </section>
             <p className="hint">
               {t(
-                "交付包含 README、结果解读、选定结果与可整理的脚本。缺失依据会明确标注。",
+                "交付包含分析报告、脚本调用说明与选定文件；完整代码保留在脚本中，缺口会明确标注。",
               )}
             </p>
           </>
@@ -598,7 +629,7 @@ export function AnalysisDeliveryPanel(p: Props) {
                     )
                   }
                 >
-                  {t("阅读结果解读")}
+                  {t("阅读分析报告")}
                 </Button>
               ) : null}
               {current.files.find((f) => f.role === "readme") ? (
@@ -690,7 +721,7 @@ export function AnalysisDeliveryPanel(p: Props) {
           className="delivery-validation-controls"
         />
       ) : null}
-      {view.page === "select" ? (
+      {view.page === "select" && !projectFilesOpen ? (
         <footer className="delivery-footer">
           <span>{tf("已选 {0} 个文件", view.selected.length)}</span>
           <Button
@@ -787,6 +818,8 @@ function DeliveryPreview(p: {
     <FilePreview
       path={p.path}
       content={content}
+      readFile={p.readFile}
+      onOpenFile={p.onLocate}
       onOpenExternally={p.onOpenExternally}
       onClosePreview={p.onClose}
       readingExpanded={reading && canExpandFilePreview(content)}

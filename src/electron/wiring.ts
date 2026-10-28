@@ -22,6 +22,9 @@ import { randomBytes, randomUUID } from "node:crypto"
 import Database from "better-sqlite3"
 import { writeModelsJson } from "../config/models-json.js"
 import { EnvironmentStore } from "../store/environments.js"
+import { ArtifactStore } from '../artifacts/store.js'
+import { ArtifactCapture } from '../artifacts/capture.js'
+import { ArtifactRetention } from '../artifacts/retention.js'
 import { accessSync, constants, existsSync, mkdirSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { loadRegistryOrDefault } from "../config/loader.js"
@@ -107,6 +110,7 @@ export interface CreateWorkbenchOptions {
   memoriesDir?: string
   configPath: string
   dbPath: string
+  artifactStoreDir?: string
   readOnly?: boolean
   onInternalError?: (operation: string, err: unknown) => void
   sessionDiagnostic?: (line: string) => void
@@ -389,6 +393,15 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
   const projectStore = new ProjectStore(db)
   const sessionStore = new SessionStore(db)
   const runStore = new RunStore(db)
+  const artifactStore = new ArtifactStore(db)
+  const kernelEnvironmentIds=new Map<string,{snapshotId:string;instanceId:string|undefined}>()
+  artifactStore.recover()
+  const artifactRetention = new ArtifactRetention({store:artifactStore,directory:opts.artifactStoreDir ?? join(dirname(opts.dbPath),'artifact-store')})
+  const artifactCapture = new ArtifactCapture({store:artifactStore,
+    scope:sessionId=>{const rec=sessionStore.get(sessionId);return !opts.readOnly&&rec?.projectId&&!rec.connectionId&&registry.agents[rec.agentId]?.kind==='native'?{projectId:rec.projectId,workspace:rec.workspace,sessionId}:undefined},
+    environment:(sessionId,request)=>{if(request.language){const inner=`${sessionId}::${request.language}` as SessionId,entry=kernelEnvironmentIds.get(inner),instanceId=内核运行时.kernelInstanceId(inner);return instanceId&&entry?.instanceId===instanceId?environments.get(entry.snapshotId):undefined}const id=会话环境.get(sessionId);return id?environments.get(id):undefined},
+    changed:(sessionId,facts,execution)=>{const environment=execution?.environment as{id?:string;kind?:string}|undefined;if(execution?.runId&&execution.language&&environment?.kind==='kernel'&&environment.id)runStore.patchEnvironment(execution.runId,environment.id);if(facts?.toolCallId)nativeRuntime.recordArtifactFiles(sessionId as SessionId,facts.toolCallId,facts);else if(facts?.runId)runStore.patchFiles(facts.runId,{filesWritten:facts.filesWritten,filesCreated:facts.filesCreated,mayIncludeUserEdits:facts.mayIncludeUserEdits});const rec=sessionStore.get(sessionId);if(rec?.projectId)for(const s of sessionStore.listByProject(rec.projectId))events.invalidateArtifacts(s.id as SessionId)},
+  })
   // 应用级设置：两个解释器路径住在这里（②-A 后续）
   const settingsStore = new SettingsStore(db)
 
@@ -478,13 +491,14 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
    * `kind: kernel` 那条既有的会话类型，以及**普通对话挂的内核**。
    * 各造一个的话，两边会各起各的进程，而「这段对话的 df 在哪台里」就说不清了。
    */
-  const 内核运行时 = new KernelRuntime({ installId: 装机id })
+  const 内核运行时 = new KernelRuntime({ installId: 装机id,onEnvironment:(inner,snapshot)=>{const snapshotId=environments.put(snapshot,new Date().toISOString());kernelEnvironmentIds.set(inner,{snapshotId,instanceId:内核运行时.kernelInstanceId(inner)})} })
 
   /**
    * 对话的内核（②）。**每种语言一台、各自懒起**——
    * 没人跑代码时它一个进程都不占。
    */
   const 对话的内核 = new 对话内核({
+    captureExecution:async request=>{await 内核运行时.waitForEnvironment(`${request.sessionId}::${request.language}` as SessionId);return artifactCapture.begin(request.sessionId,{tool:request.toolCallId?'run_code':'notebook',code:request.code,language:request.language,kernelId:request.kernelId,sequence:request.sequence,toolCallId:request.toolCallId,runId:request.runId,inputPaths:request.inputPaths,snapshotOutputs:true})},
     runtime: 内核运行时,
     // **工作区从会话表取**：代码总得有个地方跑，取不到就起不了（那时如实报错）
     workspaceOf: (对话) => sessionStore.get(对话)?.workspace,
@@ -700,6 +714,7 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
   const cliEnvironment = async (spec: import("../runtime/types.js").SessionSpec) => cliHost ? cliHost.environment(spec.sessionId) : {}
   const terminalControl = new TerminalControl()
   const nativeRuntime = new NativeRuntime({
+    artifactCapture,
     terminals: terminalControl,
     credentials: piCredentials,
     /** 压缩参数（2026-09-27）：只有测试旋钮会给；只在内存里覆盖，不写 pi 的 settings.json */
@@ -1327,6 +1342,7 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
   })()
 
   const backend = createWorkbenchBackend({
+    readOnly: opts.readOnly,
     terminalImages: {
       read: (id, revision) => cliHost?.attachments(id, revision) ?? { revision: 0, pending: [] },
       update: async request => { if (!cliHost) throw new Error('本次运行没有装配 EcoAI CLI'); return cliHost.updateAttachments(request) },
@@ -1365,6 +1381,7 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
       读主对话 = 读
     },
     onEnvironmentFrozen: (sessionId, snapshotId) => 会话环境.set(sessionId, snapshotId),
+    artifactStore, artifactRetention,
     remote: { store: connectionStore, manager: remoteConnections },
     // 后端改了某台服务器的解释器路径 → 让界面重拉名单（与 `远端状态变了` 同一条出口的两个用途）
     remoteListChanged: () => 远端名单变了?.(),

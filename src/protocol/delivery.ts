@@ -33,6 +33,15 @@ export const DeliveryPlanSchema = z
     note: z.string().max(4000),
   })
   .strict();
+export const DeliveryStepSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  purpose: z.string().max(4000),
+  script: DeliveryPathSchema.refine(p => /\.(py|r)$/i.test(p)),
+  args: z.array(z.string().max(2048)).max(30).optional(),
+  inputs: z.array(DeliveryPathSchema).max(30).default([]),
+  outputs: z.array(DeliveryPathSchema).max(30).default([]),
+  interpretation: z.string().max(12000).default(''),
+}).strict();
 export const DeliveryGenerationSchema = z
   .object({
     readme: z.string().trim().min(10).max(80_000),
@@ -49,6 +58,7 @@ export const DeliveryGenerationSchema = z
       .max(8),
     gaps: z.array(z.string().max(2000)).max(30),
     validation: DeliveryPlanSchema.optional(),
+    steps: z.array(DeliveryStepSchema).max(60).optional(),
   })
   .strict();
 export const DeliveryCreateSchema = z
@@ -63,6 +73,7 @@ export const DeliveryCreateSchema = z
     paths: z.array(DeliveryPathSchema).min(1).max(60),
     references: z.array(DeliveryPathSchema).max(30),
     mode: z.enum(["organize", "validate"]),
+    retained: z.array(z.object({path:DeliveryPathSchema,retainedId:z.string().min(1),memberId:z.string().min(1),sha256:z.string().regex(/^[a-f0-9]{64}$/)}).strict()).max(50).optional(),
   })
   .strict();
 export const DeliveryVerifySchema = z
@@ -96,6 +107,7 @@ export const DeliveryRecordSchema = z
           sha256: z.string().optional(),
           note: z.string(),
           copyPath: DeliveryPathSchema.optional(),
+          retained: z.object({retainedId:z.string(),memberId:z.string(),observationId:z.string(),versionId:z.string().optional(),sha256:z.string()}).strict().optional(),
         })
         .strict(),
     ),
@@ -126,6 +138,7 @@ export const DeliveryRecordSchema = z
           "failed",
         ]),
         note: z.string(),
+        references: z.array(z.object({path:z.string(),sha256:z.string().optional(),retainedId:z.string().optional(),memberId:z.string().optional(),observationId:z.string().optional(),versionId:z.string().optional()}).strict()).optional(),
         directory: DeliveryPathSchema.optional(),
         command: z.array(z.string()).optional(),
         exitCode: z.number().nullable().optional(),
@@ -145,6 +158,7 @@ export const DeliveryRecordSchema = z
   })
   .strict();
 export type DeliveryRecord = z.infer<typeof DeliveryRecordSchema>;
+export type DeliveryGeneration = z.infer<typeof DeliveryGenerationSchema>;
 export type DeliveryCreate = z.infer<typeof DeliveryCreateSchema>;
 export type DeliveryPlan = z.infer<typeof DeliveryPlanSchema>;
 export type DeliveryVerify = z.infer<typeof DeliveryVerifySchema>;

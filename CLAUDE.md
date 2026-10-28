@@ -10,6 +10,8 @@
 
 | 要找什么 | 去哪 |
 |---|---|
+| **成果来源、版本保留与默认分析报告**：固定副本、项目文件选择、Markdown 相对引用及分步脚本调用说明 | `docs/产物来源与留存-怎么用.md` · `docs/superpowers/specs/2026-10-28-dawn-recent-updates-design.md` |
+| **工作台菜单与状态**：工作目录、终端入口、模型与解释器、扩展数量、服务图标、快捷键 | `docs/superpowers/plans/2026-10-28-dawn-recent-updates.md` |
 | **文献调研**：内置 literature-review，逐篇 PDF 页码证据、多论文设计/样本量/结论对照，Excel + Markdown 交付 | `docs/文献调研-怎么用.md` |
 | **科研数据与蛋白**：默认开启的 GEO / NCBI SRA / UniProt 检索、编号核验和真实清单/FASTA 保存；新 API 会话可用 | `docs/科研数据-怎么用.md` · `docs/reviews/2026-10-25-uniprot-proteins-verification.md` |
 | **科研文献**：默认开启的 OpenAlex / Crossref 索引检索、DOI 元数据核对和所选真实清单保存；API 会话可用 | `docs/科研文献-怎么用.md` · `docs/reviews/2026-10-25-openalex-literature-verification.md` |

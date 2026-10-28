@@ -1,3 +1,5 @@
+import { ServiceMark } from "./service-mark.js"
+import { WorkspaceMenu, type WorkspaceMenuData } from "./workspace-menu.js"
 import { AnalysisRouteSummary } from "./analysis-route.js"
 import type { KernelState } from '../protocol/index.js'
 import { artifactEntries } from "./artifact-list.js"
@@ -157,7 +159,17 @@ function ComposerEnvironment({ children, remote }: {
   )
 }
 
-function WorkspaceEntry({
+function WorkspaceEntry({ workspace, onPick, menu, onSelect }: {
+  workspace?: string | undefined
+  onPick?: (() => void) | undefined
+  menu?: WorkspaceMenuData | undefined
+  onSelect?: ((path: string | undefined) => void | Promise<void>) | undefined
+}) {
+  return menu && onSelect ? <WorkspaceMenu workspace={workspace} onPick={onPick} data={menu} onSelect={onSelect} />
+    : <WorkspacePathEntry workspace={workspace} onPick={onPick} />
+}
+
+function WorkspacePathEntry({
   workspace,
   onPick,
 }: {
@@ -648,10 +660,11 @@ export function SessionRow({
         <div className="row-actions">
           <Button
             variant="ghost"
-            size="icon"
+            size="row-action"
             className="row-more"
             ref={按钮}
             aria-label={tf("会话操作：{0}", 名字)}
+            aria-haspopup="menu"
             aria-expanded={menu}
             onClick={() => (menu ? setMenu(false) : 打开菜单())}
           >
@@ -705,15 +718,13 @@ const 上传项 = [
   { kind: "data", 名: msgid("上传数据") },
 ] as const
 
-function AttachButton({ workspace, onInsert, onAttachImages, ready, plan, onToggleDock, dockOpen, enhanceControl }: {
+function AttachButton({ workspace, onInsert, onAttachImages, ready, plan, enhanceControl }: {
   enhanceControl?: ((close: () => void, open: boolean) => React.ReactNode) | undefined
   ready?: boolean | undefined
   workspace?: string | undefined
   onInsert: (text: string) => void
   onAttachImages?: ((paths: readonly string[]) => void) | undefined
   plan?: { on: boolean; reason?: string | undefined; onToggle?: ((on: boolean) => void) | undefined } | undefined
-  onToggleDock?: (() => void) | undefined
-  dockOpen?: boolean | undefined
 }) {
   const [开着, 设开着] = useState(false)
   const 盒 = useRef<HTMLDivElement>(null)
@@ -803,7 +814,7 @@ function AttachButton({ workspace, onInsert, onAttachImages, ready, plan, onTogg
               <span>{t(item.名)}</span>
             </Button>
           ))}
-          {enhanceControl || plan || onToggleDock ? <div className="composer-menu-divider" role="separator" /> : null}
+          {enhanceControl || plan ? <div className="composer-menu-divider" role="separator" /> : null}
           {enhanceControl?.(收起, 开着)}
           {plan ? (
             <Button variant="ghost" size="inline" role="menuitemcheckbox" tabIndex={-1} aria-label={t("先出方案")}
@@ -815,14 +826,37 @@ function AttachButton({ workspace, onInsert, onAttachImages, ready, plan, onTogg
               {plan.on && !plan.reason ? <勾图标 className="composer-plan-check" /> : null}
             </Button>
           ) : null}
-          {onToggleDock ? (
-            <Button variant="ghost" size="inline" role="menuitem" tabIndex={-1} onClick={() => { 收起(); onToggleDock() }}>
-              <终端图标 /><span className="composer-menu-label">{t("终端面板")}</span>{dockOpen ? <勾图标 /> : null}
-            </Button>
-          ) : null}
         </div>, document.body)}
     </div>
   )
+}
+
+/** 摘要未加载的会话仍使用同一菜单入口；删除沿用原任务确认流程。 */
+function TaskSessionMenu({ title, onDelete }: { title: string; onDelete: () => void }) {
+  const [open, setOpen] = useState(false)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+  return <div className="row-actions">
+    <Button ref={trigger} variant="ghost" size="row-action" className="row-more"
+      aria-label={tf("会话操作：{0}", title)} aria-haspopup="menu" aria-expanded={open}
+      onClick={() => {
+        const rect = trigger.current?.getBoundingClientRect()
+        if (rect) setPosition({ top: rect.top - 4, left: rect.right + 6 })
+        setOpen(value => !value)
+      }}>⋯</Button>
+    {open ? <SessionMenu label={tf("会话操作：{0}", title)} position={position}
+      onClose={() => setOpen(false)} restoreFocus={() => trigger.current?.focus()}>
+      <SessionMenuItems actions={{ onDelete }} onRename={() => {}} onClose={() => setOpen(false)} />
+    </SessionMenu> : null}
+  </div>
+}
+
+/** 常驻终端入口与命令面板共用现有开关，不提交输入框草稿。 */
+function ComposerTerminalButton({ onToggle, open }: { onToggle?: (() => void) | undefined; open?: boolean | undefined }) {
+  return onToggle ? <Button variant="ghost" size="icon" className="dock-toggle"
+    aria-label={t("终端面板")} aria-pressed={Boolean(open)} onClick={onToggle}>
+    <终端图标 />
+  </Button> : null
 }
 
 /**
@@ -1742,7 +1776,7 @@ export function SessionSidebar({
    * （*「我们现在在服务器的对话，我发现不能删除，也不能挪动顺序」*，
    * 那时远端那一列正是自绘的）。
    *
-   * 拿不到会话摘要时退回一行纯文字：**不画一个点了没反应的 `⋯`**。
+   * 拿不到摘要时也保留 `⋯` 菜单，按已知taskId提供删除；不伪造缺少摘要的其他操作。
    */
   /**
    * **它是一个函数，不是一个组件——这一点是必须的。**
@@ -1865,7 +1899,7 @@ export function SessionSidebar({
     const s = task.sessionId ? sessionOf?.(task.sessionId) : undefined
     if (!s) {
       /**
-       * **界面不认识这段会话，但这一行照样要能删**（2026-08-12）。
+       * **摘要尚未加载时仍保留统一的会话菜单和删除能力**。
        *
        * 上一版这里是一行纯文字：没有勾选框、没有 `⋯`。
        * 而「界面认不认识它」取决于它挂在哪个项目——
@@ -1898,19 +1932,7 @@ export function SessionSidebar({
               </span>
             </span>
           </Row>
-          {onDeleteTask ? (
-            <div className="row-actions">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="row-more"
-                aria-label={tf("删除会话：{0}", task.title ?? t("新任务"))}
-                onClick={() => onDeleteTask(task)}
-              >
-                <删除图标 />
-              </Button>
-            </div>
-          ) : null}
+          {onDeleteTask ? <TaskSessionMenu title={task.title ?? t("新任务")} onDelete={() => onDeleteTask(task)} /> : null}
         </li>
       )
     }
@@ -3117,9 +3139,16 @@ export function AgentPill({
   }, [open])
 
   if (agents.length === 0) return null
+  const optionLabel = (name: string, isCurrent: boolean, k?: SessionSummary["kind"]) =>
+    [name, k ? KIND_LABEL[k] : undefined, isCurrent ? t("当前") : undefined].filter(Boolean).join(' ')
 
   return (
-    <div className="pill agent-pill" ref={box}>
+    <div className="pill agent-pill" ref={box} onKeyDown={e => {
+      if (open && e.key === "Escape" && !在组词(e)) {
+        e.preventDefault(); e.stopPropagation(); setOpen(false)
+        box.current?.querySelector<HTMLButtonElement>('button')?.focus()
+      }
+    }}>
       <Button
         variant="ghost"
         size="sm"
@@ -3132,6 +3161,7 @@ export function AgentPill({
           * 作者：*「ds-chat 我感觉不如直接叫 DeepSeek。」*
           * `label` 缺省时退回 id——那至少是实话。
           */}
+        <ServiceMark label={triggerLabel ?? currentLabel ?? (current ? (label ? label(current) : current) : undefined)} />
         {triggerLabel ?? currentLabel ?? (current ? (label ? label(current) : current) : t("选择 agent"))}
         {kind ? <span className="kind">{KIND_LABEL[kind]}</span> : null}
         <下拉图标 />
@@ -3139,13 +3169,10 @@ export function AgentPill({
 
       {open ? (
         <div
-          className="agent-menu"
+          className="agent-menu llm-menu"
           role="menu"
           aria-label={services && services.length > 0 ? t("切换服务或新建会话") : t("新建会话")}
           tabIndex={-1}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") setOpen(false)
-          }}
         >
           {/**
             * **两组，各说各的语义**（2026-08-11）。
@@ -3163,16 +3190,18 @@ export function AgentPill({
               <ul>
                 {services.map((sv) => (
                   <li key={sv.providerId}>
-                    <Row
+                    <Button variant="ghost" size="menu-row"
                       role="menuitem"
+                      aria-label={optionLabel(sv.name, sv.name === currentLabel)}
                       onClick={() => {
                         setOpen(false)
                         onSwitchService?.(sv.providerId)
                       }}
                     >
+                      <ServiceMark provider={sv.providerId} label={sv.name} />
                       <span className="name">{sv.name}</span>
                       {sv.name === currentLabel ? <span className="hint">{t("当前")}</span> : null}
-                    </Row>
+                    </Button>
                   </li>
                 ))}
               </ul>
@@ -3198,13 +3227,15 @@ export function AgentPill({
               .flatMap((组) => 组.agentIds)
               .map((a) => (
                 <li key={a}>
-                  <Row
+                  <Button variant="ghost" size="menu-row"
                     role="menuitem"
+                    aria-label={optionLabel(label ? label(a) : a, a === current, agentKind?.(a))}
                     onClick={() => {
                       setOpen(false)
                       onPick(a)
                     }}
                   >
+                    <ServiceMark label={label ? label(a) : a} />
                     <span className="name">{label ? label(a) : a}</span>
                     {/* **每一条都标出它是哪一路**（2026-08-19 作者要的）：挑之前才是需要知道的时候 */}
                     {(() => {
@@ -3212,7 +3243,7 @@ export function AgentPill({
                       return k ? <span className="kind">{KIND_LABEL[k]}</span> : null
                     })()}
                     {a === current ? <span className="hint">{t("当前")}</span> : null}
-                  </Row>
+                  </Button>
                 </li>
               ))}
           </ul>
@@ -3399,7 +3430,6 @@ export function ModelPill({
   const 当前名 = kind === "acp"
     ? ACP当前名 && !/^(default(?:\s*\(.*\))?|auto)$/i.test(ACP当前名.trim()) ? ACP当前名 : label ?? "ACP"
     : current?.model ?? t("CLI 默认")
-  const 当前标 = 叫什么(current?.provider).slice(0, 1).toUpperCase()
 
   /**
    * **按服务分组**（2026-08-12）。
@@ -3438,9 +3468,7 @@ export function ModelPill({
         aria-label={tf("当前模型：{0}。点击切换", 当前名)}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="svc-mark" aria-hidden="true">
-          {当前标}
-        </span>
+        <ServiceMark provider={current?.provider} label={叫什么(current?.provider)} />
         <span className="model-name">{当前名}</span>
         <三角图标 className={`model-caret${open ? " open" : ""}`} />
       </Button>
@@ -3478,9 +3506,7 @@ export function ModelPill({
                           onPick(c)
                         }}
                       >
-                        <span className="svc-mark" aria-hidden="true">
-                          {叫什么(c.provider).slice(0, 1).toUpperCase()}
-                        </span>
+                        <ServiceMark provider={c.provider} label={叫什么(c.provider)} />
                         <span className="name">{c.model}</span>
                         {/**
                           * **当前那条打勾，且同时留一个字**——
@@ -3688,10 +3714,10 @@ function 同账(a: readonly TranscriptItem[], b: readonly TranscriptItem[]): boo
   })
 }
 
-function ComposerSessionUsage({ items, context }: { items: readonly TranscriptItem[]; context?: React.ReactNode }) {
+function ComposerSessionUsage({ items }: { items: readonly TranscriptItem[] }) {
   const { ref, height } = useComposerUsageSpace()
   return <div className="composer-session-usage" style={{ minHeight: height }} data-reserved={height > 0}>
-    <div className="composer-session-usage-content" ref={ref}><SessionUsage items={items} />{context}</div>
+    <div className="composer-session-usage-content" ref={ref}><SessionUsage items={items} /></div>
   </div>
 }
 
@@ -3801,6 +3827,8 @@ export function ConversationView({
   currentKernels,
   workspace,
   onPickWorkspace,
+  workspaceMenu,
+  onSelectWorkspace,
   serviceLabel,
   onOpenSettings,
   待发: 传进来的待发,
@@ -3852,6 +3880,8 @@ export function ConversationView({
   workspace?: string | undefined
   /** 去弹原生目录选择器（设一个 / 换一个）。**不给就不画那颗按钮** */
   onPickWorkspace?: (() => void) | undefined
+  workspaceMenu?: WorkspaceMenuData | undefined
+  onSelectWorkspace?: ((path: string | undefined) => void | Promise<void>) | undefined
   /** provider id → 该怎么称呼（`deepseek` → `DeepSeek`）。模型 pill 的分组标题用它 */
   serviceLabel?: ((providerId: string) => string) | undefined
   /** 「配置自定义模型」通向哪。**不给就不画那一条** */
@@ -5243,7 +5273,8 @@ export function ConversationView({
         <div className="composer-card" hidden={questionTakeover}>
         <ComposerEnvironment remote={session.remote}>
             {session.remote || onPickWorkspace || workspace ? (
-              <WorkspaceEntry
+              <WorkspaceEntry key={session.sessionId}
+                {...(!session.remote ? { menu: workspaceMenu, onSelect: onSelectWorkspace } : {})}
                 {...(session.remote ? { workspace: session.remote.cwd } : workspace ? { workspace } : {})}
                 {...(!session.remote && onPickWorkspace ? { onPick: onPickWorkspace } : {})}
               />
@@ -5597,7 +5628,7 @@ export function ConversationView({
 
         </div>
 
-          {/* 输入卡底栏：左侧添加与权限，右侧模型、推理与发送。 */}
+          {/* 输入卡底栏：左侧添加、终端与权限，右侧上下文、模型、推理与发送。 */}
           {/* 主区那张报自己几行、坞里那张跟着排（2026-09-29，与主区同高，见 `footer-rows.ts`） */}
           <div className="composer-footer" ref={附栏ref} data-follow-main={紧凑 && 主区附栏行数 ? (主区附栏行数 === 1 ? "one-row" : "two-rows") : undefined}>
             <div className="composer-tools">
@@ -5620,7 +5651,6 @@ export function ConversationView({
               坞里={紧凑}
             />)}
 
-              {...(onToggleDock ? { onToggleDock, dockOpen } : {})}
               {...(画方案开关 ? { plan: { on: 方案开着, reason: 方案不能, onToggle: 方案开关 && onSetPlan ? (on: boolean) => {
                 设发送出错(undefined)
                 void onSetPlan(on).catch((e: unknown) => 设发送出错(e instanceof Error ? e.message : String(e)))
@@ -5674,6 +5704,7 @@ export function ConversationView({
               },
                   })}
             />
+            <ComposerTerminalButton onToggle={onToggleDock} open={dockOpen} />
             {/**
               * **一颗 pill，不是两颗**（2026-08-12，作者指的那件）。
               *
@@ -5723,6 +5754,18 @@ export function ConversationView({
         </div>
 
         <div className="composer-controls">
+            {仪表 ? (
+              <ContextMeter
+                读数={仪表}
+                onOpen={上下文.重取}
+                {...(onCompact ? { onCompact: () => onCompact() } : {})}
+                {...(压缩中
+                  ? { 不能压的原因: t("正在压缩上下文，压完再说") }
+                  : busy
+                    ? { 不能压的原因: t("这一轮还在跑，做完再压缩") }
+                    : {})}
+              />
+            ) : null}
             {/**
               * 会话开关（A3，只有 acp 会话有）。**一个都没有时不画**——
               * 不摆一个点开是空的菜单。
@@ -5853,18 +5896,7 @@ export function ConversationView({
           </div>
           </div>
         </div>
-        <ComposerSessionUsage items={items} context={仪表 ? (
-          <ContextMeter
-            读数={仪表}
-            onOpen={上下文.重取}
-            {...(onCompact ? { onCompact: () => onCompact() } : {})}
-            {...(压缩中
-              ? { 不能压的原因: t("正在压缩上下文，压完再说") }
-              : busy
-                ? { 不能压的原因: t("这一轮还在跑，做完再压缩") }
-                : {})}
-          />
-        ) : null} />
+        <ComposerSessionUsage items={items} />
       </form>
     </div>
   )
@@ -7071,6 +7103,7 @@ export function EmptyConversation({
   enhanceReason,
   onOpenSettings,
   onPickDirectory,
+  workspaceMenu,
   先出方案,
 }: {
   agents: readonly string[]
@@ -7121,7 +7154,8 @@ export function EmptyConversation({
    * 因为只有选择了，才归类为项目，如果不选择目录，那么就是会话。」*
    * ——**归类的那个决定应该在开口之前就能做**。
    */
-  onPickDirectory?: (() => Promise<string | null>) | undefined
+  onPickDirectory?: ((path?: string) => Promise<string | null>) | undefined
+  workspaceMenu?: WorkspaceMenuData | undefined
   onOpenSettings: () => void
   /**
    * 空态那颗「先出方案」（2026-09-27）：按下只是记住「第一句按先出方案发」，由 App 在会话建出来、第一句发出去之前打开。
@@ -7424,6 +7458,12 @@ export function EmptyConversation({
             <ComposerEnvironment>
                 {onPickDirectory ? (
                   <WorkspaceEntry
+                    menu={workspaceMenu}
+                    onSelect={async path => {
+                      if (path === undefined) { 设工作目录(undefined); return }
+                      const selected = await onPickDirectory(path)
+                      if (selected) 设工作目录(selected)
+                    }}
                     {...(工作目录 ? { workspace: 工作目录 } : {})}
                     onPick={() => {
                       void onPickDirectory().then((d) => {
@@ -7610,7 +7650,6 @@ export function EmptyConversation({
                   onNote={设增强说明}
                 />)}
 
-                  {...(onToggleDock ? { onToggleDock } : {})}
                   {...(先出方案 ? { plan: { on: 先出方案.on, reason: 先出方案.不能的原因, onToggle: 先出方案.onToggle } } : {})}
                   {...(工作目录 ? { workspace: 工作目录 } : {})}
                   ready={空态图.length > 0 || 空态附过 || 空态文件.some((f) => 草稿.includes(`@${f.令牌}`))}
@@ -7636,6 +7675,7 @@ export function EmptyConversation({
                     }
                   }}
                 />
+                <ComposerTerminalButton onToggle={onToggleDock} open={dockOpen} />
                 {/**
                   * **与对话里那张同一处位置**（2026-08-16 一起搬上来的）。
                   *

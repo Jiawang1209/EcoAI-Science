@@ -66,9 +66,43 @@ function props() {
   };
 }
 describe("analysis delivery in artifacts", () => {
+  it("adds existing files from the project even when this session has no generated artifacts", async () => {
+    const p = props()
+    p.data.artifacts = []
+    p.invoke.mockImplementation(async (op, request: unknown) => {
+      if (op === 'listAnalysisDeliveries') return { supported: true, records: [] }
+      if (op === 'listDirectory') {
+        const path = (request as {path: string}).path
+        return { path, entries: path ? [{ name: '01_clean.py', kind: 'file', modifiedAt: '2026' }] : [{ name: 'analysis', kind: 'dir', modifiedAt: '2026' }], ignored: 0, omitted: 0 }
+      }
+      return record
+    })
+    render(<AnalysisDeliveryPanel {...p} />)
+    fireEvent.click(screen.getByLabelText('产物操作菜单'))
+    fireEvent.click(await screen.findByRole('button', {name: '整理交付'}))
+    fireEvent.click(await screen.findByRole('button', {name: '从项目添加文件'}))
+    fireEvent.click(await screen.findByRole('button', {name: 'analysis'}))
+    fireEvent.click(await screen.findByRole('checkbox', {name: /01_clean.py/}))
+    fireEvent.click(screen.getByRole('button', {name: '添加所选文件'}))
+    expect((await screen.findByRole('checkbox', {name: /analysis\/01_clean.py/}) as HTMLInputElement).checked).toBe(true)
+    expect(p.invoke).toHaveBeenCalledWith('listDirectory', {sessionId: 's', path: 'analysis'})
+    fireEvent.click(screen.getByRole('button', {name: '下一步'}))
+    expect(screen.getByText('已选 1 个文件')).toBeTruthy()
+  })
+  it("keeps delivery actions secondary while results remain directly accessible", async () => {
+    const p = props();
+    render(<AnalysisDeliveryPanel {...p} />);
+    expect(await screen.findByRole("button", {name: "results/model.csv"})).toBeTruthy();
+    expect(screen.queryByRole("button", {name: "整理交付"})).toBeNull();
+    expect(screen.queryByText("查看结果，或整理成可复用的交付")).toBeNull();
+    expect(screen.getByRole("button", {name: "历史"})).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("产物操作菜单"));
+    expect(await screen.findByRole("button", {name: "整理交付"})).toBeTruthy();
+  });
   it("requires explicit file choice and defaults to organize without execution", async () => {
     const p = props();
     render(<AnalysisDeliveryPanel {...p} />);
+    fireEvent.click(screen.getByLabelText("产物操作菜单"));
     await waitFor(() =>
       expect(
         screen
@@ -116,12 +150,13 @@ describe("analysis delivery in artifacts", () => {
         : record,
     );
     render(<AnalysisDeliveryPanel {...p} />);
+    fireEvent.click(screen.getByLabelText("产物操作菜单"));
     fireEvent.click(await screen.findByRole("button", { name: /交付记录/ }));
     fireEvent.click(await screen.findByRole("button", { name: /草地结果/ }));
-    fireEvent.click(screen.getByRole("button", { name: "阅读结果解读" }));
+    fireEvent.click(screen.getByRole("button", { name: "阅读分析报告" }));
     expect(await screen.findByText("真实结果解读")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "收起预览" }));
-    expect(screen.getByRole("button", { name: "阅读结果解读" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "阅读分析报告" })).toBeTruthy();
   });
   it("does not let a late response from the old scope replace the current view", async () => {
     let finish: (v: unknown) => void = () => {};
@@ -137,10 +172,11 @@ describe("analysis delivery in artifacts", () => {
     rerender(
       <AnalysisDeliveryPanel {...next} sessionId="other" scopeKey="other:/w" />,
     );
-    await screen.findByRole("button", { name: "整理交付" });
+    await screen.findByRole("button", { name: "results/model.csv" });
     finish({ supported: true, records: [record] });
     await Promise.resolve();
-    fireEvent.click(screen.getByRole("button", { name: /交付记录/ }));
+    fireEvent.click(screen.getByLabelText("产物操作菜单"));
+    fireEvent.click(await screen.findByRole("button", { name: /交付记录/ }));
     expect(screen.queryByText("草地结果")).toBeNull();
   });
   it("keeps a selected route or Bot handoff in the same scoped selection flow", async () => {

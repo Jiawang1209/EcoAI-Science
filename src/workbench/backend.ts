@@ -1,3 +1,4 @@
+import { createArtifactOperations } from '../artifacts/operations.js'
 import type { ResponseOf } from '../protocol/index.js'
 import { TransferBatches } from "../remote/transfer-batches.js"
 import { missingFile } from "../remote/transfer-io.js"
@@ -416,6 +417,9 @@ export interface WorkbenchBackendOptions {
    * 只有不关心历史的测试才该省略它（不变式 3）。
    */
   runRecorder?: RunRecorder
+  readOnly?: boolean | undefined
+  artifactStore?: import('../artifacts/store.js').ArtifactStore
+  artifactRetention?: import('../artifacts/retention.js').ArtifactRetention
   /**
    * 对话挂的内核（笔记本，2026-08-26）。`runInKernel` / `interruptKernel` / 普通对话的
    * `listVariables` 都走它——与 run_code 工具**同一台**，你在笔记本里定义的 `df` 模型就能看到。
@@ -680,6 +684,7 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
         ask,
         skills: selected.join("\n"),
         interpreters: settings?.interpreters() ?? {},
+        ...(opts.artifactStore&&opts.artifactRetention&&rec.projectId?{readRetained:async(reference:NonNullable<import('../protocol/delivery.js').DeliveryCreate['retained']>[number])=>{const group=opts.artifactStore!.retained(rec.projectId!,reference.retainedId),member=group.members.find(m=>m.id===reference.memberId);if(!member||member.observation.path!==reference.path||member.sha256!==reference.sha256)throw new UserFacingError('留存引用与选定成员不一致');return{bytes:await opts.artifactRetention!.read(rec.projectId!,group.id,member.id),observationId:member.observation.id,...(member.observation.versionId?{versionId:member.observation.versionId}:{}),source:{observation:member.observation,execution:member.execution,inputs:member.inputs}}}}:{}),
       };
       slot = { options, service: new DeliveryService(options) };
       analysisDeliveries.set(scope, slot);
@@ -880,16 +885,12 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
   }
 
   /**
-   * 系统给的默认工作目录（2026-08-12，作者定的两个平台各一个）。
-   *
-   * 作者：*「windows 的话就默认设置在桌面吧，mac 默认家目录下设置一个
-   * `DAWN` 的目录就行。」*
-   *
-   * **不是 app data 目录**：那儿是给应用自己放数据的，用户永远找不到，
-   * 而这个目录里会真的落下他的文件。
+   * 未配置时显示实际装配的临时根之父目录，保证设置、菜单与运行位置一致。
+   * 本机预览和CLI可注入隔离根；没有装配信息时才展示系统候选路径。
+   * 只调整默认路径读数，不修改或搬迁任何现有工作区。
    */
-  const 系统默认工作目录 = () =>
-    process.platform === "win32" ? join(homedir(), "Desktop") : join(homedir(), "DAWN")
+  const 系统默认工作目录 = () => scratchRoot ? dirname(resolve(scratchRoot))
+    : process.platform === "win32" ? join(homedir(), "Desktop") : join(homedir(), "DAWN")
 
   /**
    * 正在跑的那些传输（批 4a，2026-08-17）。
@@ -2330,6 +2331,7 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
     return member
   }
   const backend: WorkbenchBackend = {
+    ...createArtifactOperations({store:opts.artifactStore,retention:opts.artifactRetention,readOnly:opts.readOnly,sourceSupported:id=>registry.agents[sessions.get(id)?.agentId ?? '']?.kind==='native',session:id=>sessions.get(id),changed:projectId=>{for(const s of sessions.listByProject(projectId))events.invalidateArtifacts(s.id)}}),
     listBots: async ({includeArchived}) => botOperation(() => {requireBots();return {bots: opts.bots!.list(includeArchived === undefined ? {} : {includeArchived})}}),
     createBot: async input => botOperation(async () => {requireBots();await validateBotModel({...input, id: "new", enabled: input.enabled ?? true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()});return {bot: opts.bots!.create(input)}}),
     updateBot: async ({botId, patch}) => botOperation(async () => {requireBots();const previous = opts.bots!.get(botId);if (!previous) throw new Error("Bot 不存在");const candidate = {...previous, ...patch, model: patch.model === null ? undefined : patch.model ?? previous.model};await validateBotModel(candidate as BotProfile);return {bot: opts.bots!.update(botId, patch)}}),
@@ -2633,6 +2635,7 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
             : { exists: 文件仍在(拼路径(会话.workspace, a.path)) }),
         })),
         unknown,
+        ...(!远端 && 会话?.projectId && opts.artifactStore ? { observedArtifacts: opts.artifactStore.latest({projectId:会话.projectId,workspace:会话.workspace},sessionId).map(o=>({path:o.path,kind:产物类型(o.path),observationId:o.id,observedAt:o.createdAt,exists:文件仍在(拼路径(会话.workspace,o.path))})) } : {}),
         ...(routeArtifacts.length ? { routeArtifacts } : {}),
       }
     },
@@ -4328,7 +4331,7 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
      * 等内核这一轮吐完（内核输出经 `转发` 自己进转录），再把 cell 收成 ok / error、
      * 账本记一条 user 的 Run、把「代码 + 输出摘要」攒进不在场缓冲——下一条你发给模型的话会带上它。
      */
-    runInKernel: async ({ sessionId, language, code }) => {
+    runInKernel: async ({ sessionId, language, code, inputPaths }) => {
       const k = opts.kernels
       if (!k) throw fault("internal_error", "这台没有接对话内核")
       拒远端(sessionId)
@@ -4353,12 +4356,14 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
       }
       // 执行前取一次：Run 的时长要是真的（送进去到 idle），不是记账那一刻的零
       const startedAt = new Date().toISOString()
+      const notebookRunId=runRecorder?.beginNotebook(sessionId,language)
       try {
-        const r = await k.执行(sessionId, language, code, { 开始了: () => 真在跑.set(键, cellId) })
+        const r = await k.执行(sessionId, language, code, { evidence:{runId:notebookRunId,inputPaths},开始了: () => 真在跑.set(键, cellId) })
         const s = 输出摘要(r.输出)
         // 出错时 Run 的原因只取 `ename: evalue`——traceback 是给人看的，账本要的是一句能检索的话
         const 原因 = s.出错了 ? 首个错误(r.输出) : undefined
-        const runId = runRecorder?.记内核执行(sessionId, language, { hasError: s.出错了, ...(原因 ? { terminalReason: 原因 } : {}) }, startedAt)
+        const runId = notebookRunId ?? runRecorder?.记内核执行(sessionId, language, { hasError: s.出错了, ...(原因 ? { terminalReason: 原因 } : {}) }, startedAt)
+        if(notebookRunId)runRecorder?.finishNotebook(notebookRunId,{hasError:s.出错了,...(原因?{terminalReason:原因}:{})})
         收尾({ status: s.出错了 ? "error" : "ok", ...(runId ? { runId } : {}) })
         攒一段(
           sessionId,
@@ -4368,7 +4373,8 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
       } catch (err) {
         // 解释器没配、内核起不来、跑到一半退出——都是用户能处理的，如实说；cell 与账本都要收口
         const 消息 = err instanceof Error ? err.message : String(err)
-        runRecorder?.记内核执行(sessionId, language, { hasError: true, terminalReason: 消息 }, startedAt)
+        if(notebookRunId)runRecorder?.finishNotebook(notebookRunId,{hasError:true,terminalReason:消息})
+        else runRecorder?.记内核执行(sessionId, language, { hasError: true, terminalReason: 消息 }, startedAt)
         收尾({ status: "error" })
         throw fault原样("invalid_request", 消息)
       } finally {
@@ -5353,13 +5359,18 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
       return {
         sessions: sessions.countByProject(projectId),
         runs: runs.countByProject(projectId),
+        ...(opts.artifactStore?{retained:opts.artifactStore.impact(projectId)}:{}),
         workspace: p.workspace,
       }
     },
 
-    deleteProject: async ({ projectId }) => {
+    deleteProject: async ({ projectId,retainedRevision,deleteRetained }) => {
+      const remove=async()=>{
       const p = projectStore.get(projectId)
       if (!p) throw fault("not_found", "没有这个项目：{0}", projectId)
+      const retained=opts.artifactStore?.impact(projectId)
+      if(retained?.count&&(deleteRetained!==true||retainedRevision!==retained.revision))throw fault("invalid_request", "项目留存集合已变化或尚未确认；请重新查看移除影响")
+      if(opts.readOnly)throw fault("invalid_request", "当前宿主只读，不能移除项目")
 
       /**
        * **先把活着的会话停掉**，再删记录。反过来的话进程还活着
@@ -5381,13 +5392,18 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
       const 它的会话 = 全部会话.map((r) => r.id)
       tasks?.removeBySessions(它的会话) // tasks 未装配不抛(审查 debug F13):否则删项目半途而废
       const sessionsDeleted = sessions.deleteByProject(projectId)
+      opts.artifactStore?.removeProject(projectId)
       const runsDeleted = runs.deleteByProject(projectId)
       projectStore.delete(projectId)
       /**
        * **磁盘上的文件夹一个字节都没动。** 回它的路径，让人一眼确认
        * ——「移除的是工作台里的记录，不是我的数据」。
        */
-      return { sessionsDeleted, runsDeleted, workspace: p.workspace }
+      let retentionCleanup:string|undefined
+      try{await opts.artifactRetention?.clearProjectStorage(projectId)}catch(e){retentionCleanup=String(e instanceof Error?e.message:e);console.error('[产物留存] 项目对象待清理',retentionCleanup)}
+      return { sessionsDeleted, runsDeleted, workspace: p.workspace,...(retentionCleanup?{retentionCleanup}:{}) }
+      }
+      return opts.artifactRetention?opts.artifactRetention.locked(projectId,remove):remove()
     },
 
     acquireLease: async ({ sessionId, holder }) => {
