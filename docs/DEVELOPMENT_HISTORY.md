@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-28 — 最新功能迁移经复核合并本地 main
+
+- **Type**: docs / integration
+- **What**: 按用户授权重新检查 `1513d3b6`，无新增阻断项后将 `codex/dawn-recent-updates` 快进合入本地 `main`；本轮没有改应用实现。
+- **Verification**: 新跑完整 Vitest 5641 项通过、10 条件跳过，类型和构建通过，38 项关键 Electron 通过；合并后类型、285 项相关回归和 14 项 Electron 通过。见 `docs/reviews/2026-10-28-ecoai-dawn-recent-updates-main-verification.md`。
+- **Impact**: 未推送、发布或替换安装版；保留功能分支与其他工作树。
+
 ### 2026-10-28 — 迁移 DAWN 最新成果留存、默认报告与工作台交互
 
 - **Type**: feat / fix
