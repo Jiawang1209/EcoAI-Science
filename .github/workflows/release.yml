@@ -41,6 +41,8 @@ jobs:
         run: node scripts/verify-release.mjs
       - run: npm run build
       - run: ${{ matrix.cmd }}
+      - name: Smoke test packaged CLI with system Node
+        run: node scripts/test-packaged-cli.mjs
       - name: 运行打包后的应用自测（macOS / Windows）
         if: runner.os != 'Linux'
         run: npm run test:packaged

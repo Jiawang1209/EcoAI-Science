@@ -5,10 +5,11 @@
  * 四个原生模块各碰一次：better-sqlite3（开库）、pi 链路（发一句收假回复）、node-pty（开终端）、zeromq（列内核）。
  * 只验当前平台；mac 上跑绿只说明 mac 的包能用。
  */
+import { execFileSync } from "node:child_process"
 import { _electron, expect } from "@playwright/test"
 import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync, realpathSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join, resolve } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { startMockInferenceServer, mockModelsJson, CANNED_REPLY } from "./mock-inference-server.mjs"
 
 const ROOT = resolve(import.meta.dirname, "..")
@@ -51,6 +52,10 @@ function 找可执行() {
 }
 
 const exe = 找可执行()
+const packagedRoot = process.platform === "darwin"
+  ? resolve(dirname(exe), "..", "Resources", "app")
+  : join(dirname(exe), "resources", "app")
+execFileSync(process.execPath, [join(ROOT, "scripts", "test-packaged-cli.mjs"), packagedRoot], { stdio: "inherit", timeout: 30_000 })
 const server = await startMockInferenceServer()
 const dir = mkdtempSync(join(tmpdir(), "dawn-packaged-"))
 const workspace = join(dir, "workspace")
@@ -135,8 +140,7 @@ try {
     await expect(page.locator(".turns .turn.agent").last()).toContainText(CANNED_REPLY, { timeout: 60_000 })
   })
   await 查("终端起得来（node-pty spawn-helper）", async () => {
-    await page.locator('.composer-card .attach-trigger').click()
-    await page.getByRole('menuitem', { name: '终端面板', exact: true }).click()
+    await page.getByRole('button', { name: '终端面板', exact: true }).click()
     const host = page.locator(".dock .term-host")
     await host.waitFor({ timeout: 60_000 })
     // 光有格子不算：敲一句、等回显，才证明 spawn-helper 真把 shell 起起来了

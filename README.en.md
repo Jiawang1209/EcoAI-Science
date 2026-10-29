@@ -30,7 +30,7 @@ Discuss an analysis with an Agent, let it use R / Python on your computer or an 
 - **Work with R and Python together.** Use your configured interpreters and Jupyter kernels, keep variables available while a kernel remains running, and inspect or manually execute notebook cells.
 - **Keep control of local data.** Projects correspond to folders you manage; conversations, settings, and execution records are stored on your computer. Server files are managed over SSH. Requests to online models and research services still go to the selected providers.
 - **Inspect the process.** Conversations expose tool calls, code, execution output, and generated files. File-change tracking, execution records, and separate delivery verification help you review what happened.
-- **Choose models and tools.** Configure model providers, connect existing external runtimes such as Claude Code or Codex, and enable MCP services, skills, and tool plugins as needed.
+- **Choose models and tools.** Configure model providers, connect existing external runtimes such as Claude Code or Codex, and enable MCP services, skills, and tool plugins as needed. See [MCP results, cancellation and recovery](docs/mcp.md).
 
 ## What can it do?
 
@@ -47,7 +47,7 @@ Discuss an analysis with an Agent, let it use R / Python on your computer or an 
 | Analysis delivery | Select files explicitly, organize scripts and explanations, optionally run verification in a separate process, and compare outputs in supported formats |
 | Office tools and file previews | Use Word, Excel, PowerPoint, and PDF tools; preview Markdown, images, tables, PDFs, and other workspace files |
 | Multiple Agents and specialist Bots | Involve built-in specialist roles, subtasks, and teams in analysis, coding, and scientific review |
-| Skills, memory, and connectors | Manage reusable skills, confirm persistent memories, and connect MCP services and browser tools |
+| Skills, memory, and connectors | Manage reusable skills, discover and install [public GitHub skills at a pinned commit](docs/skills.md), confirm persistent memories, and connect MCP services and browser tools |
 | Scheduled tasks and remote assistance | Start scheduled tasks while the application is running; optionally configure WeChat / Feishu channels to check progress and continue conversations |
 
 For ecological research, EcoAI can help organize quadrat and observation tables, explore environmental gradients and response variables, write community or diversity analysis code, create scientific figures, and compare research designs across papers. The methods available depend on your research question, data, and configured R / Python packages.

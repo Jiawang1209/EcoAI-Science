@@ -1,3 +1,4 @@
+import { skillDiscoveryOperations } from "./skill-discovery.js"
 import { FileContentSchema } from "./file-content.js"
 import { artifactHistoryOperations } from "./artifact-history.js"
 import { DirectoryTransferRequest, TransferBatchSchema, TransferDetailSchema } from "../remote/transfer-types.js"
@@ -1334,6 +1335,8 @@ export const OPERATIONS = {
    * 标准是 Anthropic 的 Agent Skills（`SKILL.md` + frontmatter），
    * **pi 已经把它实现完了**，这里只是把它端到界面上。
    */
+  ...skillDiscoveryOperations,
+
   listAgentSkills: {
     /** 按项目问：项目级 `.dawn/skills/` 会追加几个 */
     request: z.object({ projectId: z.string().min(1).optional() }).strict(),
@@ -1349,6 +1352,7 @@ export const OPERATIONS = {
               /** 它从哪儿来。**界面要能说清楚**：自带的与你写的不是一回事 */
               from: z.enum(["builtin", "global", "project"]),
               /** 只能显式 `/skill:名` 调，模型不会自己用 */
+              hasOrigin: z.boolean().optional(),
               manualOnly: z.boolean(),
               /**
                * 三档调用策略（7.17）：`model` 缺省 / `manual` 只手动 / `off` 谁都不给。

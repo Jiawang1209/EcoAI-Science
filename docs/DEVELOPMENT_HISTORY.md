@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-29 — 迁移 MCP 可靠性、GitHub 技能发现与 CLI 打包修复
+
+- **Type**: feat / fix
+- **What**: 在 `codex/mcp-skill-discovery-updates` 对照 DAWN 截至 `735db8dd` 的最新 10 个提交，增加 MCP 富结果/错误保留、独立取消与安全响应续传；技能目录检索、GitHub 包预览、固定提交安装与离线来源；构建解析检查和包内 CLI Unicode 运行依赖。保留 EcoAI 品牌、0.0.2 和既有向导/交付修正。
+- **Verification**: 完整 Vitest 5748 项通过、11 项条件跳过，类型与构建通过；24 项真实 Electron 通过；公共 GitHub 只读预览成功；macOS ARM64 包在仓库内外均通过系统 Node CLI 和 7 项应用自测，签名完整性通过。两部分独立审查无实证阻断。见 `docs/reviews/2026-10-29-ecoai-mcp-skill-discovery-verification.md`。
+- **Impact**: 仅新分支；未合并 main、推送、发布或替换安装版，没有向正式技能根安装内容。Windows/Linux 与任意第三方技能执行尚未验收。
+
 ### 2026-10-28 — 最新功能迁移经复核合并本地 main
 
 - **Type**: docs / integration
