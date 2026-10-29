@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-29 — Mac 测试与打包工作流迁移 macos-15
+
+- **Type**: fix / ci
+- **What**: 将 ci 与 package 两处 macos-14 标签同步迁移到 macos-15，避免继续依赖即将退役的镜像。原失败记录是 runner 分配/容量问题，尚未进入编译。其余矩阵、打包命令和发布条件保持不变。
+- **Verification**: 两份 YAML 解析与全对象语义差异检查、类型及构建通过；本地生成 ARM64/x64 四份 Mac DMG/ZIP，ARM64 包 CLI 与 7 项自测通过；独立复审无阻断。见 `docs/reviews/2026-10-29-ecoai-macos15-workflow-migration.md`。GitHub macos-15 实际执行仍待用户从 main 触发。
+- **Impact**: 按用户授权本地检查后合入 main，推送、GitHub main 手动构建与正式发布仍由用户执行；不修改现有 v0.0.3 标签或发布附件。
+
 ### 2026-10-29 — Windows 品牌修复复核后合并本地 main
 
 - **Type**: docs / integration
