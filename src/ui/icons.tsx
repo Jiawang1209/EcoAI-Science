@@ -162,6 +162,16 @@ export function 铅笔图标({ className }: 图标属性 = {}) {
   )
 }
 
+/** 消息修改：与复制共用 16px、1.5px 圆端描边，避免实心图标抢过正文。 */
+export function 铅笔描边图标({ className }: 图标属性 = {}) {
+  return (
+    <描边壳 {...(className ? { className } : {})}>
+      <path d="M10.4 2.4a1.7 1.7 0 0 1 2.4 2.4l-7.6 7.6-3.2.8.8-3.2 7.6-7.6Z" />
+      <path d="m9.2 3.6 2.4 2.4" />
+    </描边壳>
+  )
+}
+
 /** 回退（2026-09-27）：一支逆时针折回的箭头——「回到这句之前」 */
 export function 回退图标({ className }: 图标属性 = {}) {
   return (

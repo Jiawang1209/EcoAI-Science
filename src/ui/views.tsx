@@ -83,7 +83,7 @@ import { 网页卡 } from "./web.js"
 import { 头一条网址 } from "../policy/local-url.js"
 import { formatDuration, formatTokens, 多久之前, 年月日时分, 拆模型名, 短路径, 基名, 目录显示名 } from "./format.js"
 import { sessionActivity } from '../shared/session-activity.js'
-import { 归档图标, 归档描边图标, 时钟图标, 时钟描边图标, 闹钟描边图标, 加号描边图标, 对话图标, 文件夹图标, 文件图标, 加号图标, 圆加号图标, 实心圆加号图标, 终端图标, 停止图标, 下拉图标, 上箭头图标, 铅笔图标, 回退图标, 删除图标, 三角图标, 复制图标, 技能图标, 设置图标, 插件图标, 勾图标 , 关闭图标 , R图标, Python图标 , 服务器图标 , 文件夹描边图标, 对话描边图标, 服务器描边图标, 搜索图标, 电脑图标, 概览图标, 图片文件图标, 表格文件图标 } from "./icons.js"
+import { 归档图标, 归档描边图标, 时钟图标, 时钟描边图标, 闹钟描边图标, 加号描边图标, 对话图标, 文件夹图标, 文件图标, 加号图标, 圆加号图标, 实心圆加号图标, 终端图标, 停止图标, 下拉图标, 上箭头图标, 铅笔图标, 铅笔描边图标, 回退图标, 删除图标, 三角图标, 复制图标, 技能图标, 设置图标, 插件图标, 勾图标 , 关闭图标 , R图标, Python图标 , 服务器图标 , 文件夹描边图标, 对话描边图标, 服务器描边图标, 搜索图标, 电脑图标, 概览图标, 图片文件图标, 表格文件图标 } from "./icons.js"
 import { StickToBottom, type StickToBottomContext } from "use-stick-to-bottom"
 import { 回到底部 } from "./back-to-bottom.js"
 
@@ -6375,7 +6375,7 @@ function TranscriptRowImpl({
               aria-label={t("修改")}
               onClick={() => 设编辑(item.text)}
             >
-              <铅笔图标 />
+              <铅笔描边图标 />
             </Button>
           ) : null}
           {/**

@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-29 — 统一消息修改图标并缩小设置勾选框
+
+- **Type**: fix / ui
+- **What**: 在 `codex/message-icons-settings-toggles` 为消息修改换用与复制一致的描边铅笔及默认/聚焦灰度；整页和侧栏设置的原生勾选框统一 16px，标签保留 24px 点击高度。其他实心铅笔和设置外控件不变。
+- **Verification**: 先用真实 Electron 复现两处差异，最终 156 项相关 UI、类型/构建及 24 项 Electron 通过；亮暗、侧栏/整页/窄窗截图与独立复核通过，打开隔离示例预览。见 `docs/reviews/2026-10-29-ecoai-message-settings-controls-verification.md`。
+- **Impact**: 只提交新分支，保留 main；未推送、发布或替换安装版，预览使用独立数据与模拟回复。
+
 ### 2026-10-29 — Mac 测试与打包工作流迁移 macos-15
 
 - **Type**: fix / ci
