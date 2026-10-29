@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-29 — Windows 品牌修复复核后合并本地 main
+
+- **Type**: docs / integration
+- **What**: 按用户授权，将独立分支 `codex/windows-icon-full-name` 的 `1be39eb0` 从 `d616d4b7` 快进合入本地 main，保留分支和工作树；没有修改应用实现。
+- **Verification**: 合并前后 42 项相关回归及类型检查通过，Windows 三份既有产物的图标/主程序全名与 SHA 清单复核通过，Mac 包 CLI 和 7 项自测通过。main 完整构建及 4 项真实 Electron 验收通过，独立只读复核无阻断。见 `docs/reviews/2026-10-29-ecoai-windows-branding-main-verification.md`。
+- **Impact**: 仅本地整合；未推送、发布或替换安装版。Windows 原生运行验收边界保持不变。
+
 ### 2026-10-29 — 修复 Windows 原生图标与窗口短名称
 
 - **Type**: fix

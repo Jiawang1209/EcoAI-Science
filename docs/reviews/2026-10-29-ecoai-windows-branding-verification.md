@@ -31,3 +31,5 @@ Windows 配置原为 `signAndEditExecutable: false`。本机 electron-builder �
 Windows 三份输出在 Mac 上跨构建，仅用于 PE 图标/元数据验证。没有在 Windows 真机运行安装器、应用、卸载器或观察 Explorer/任务栏缓存；平台原生模块未在 Windows 上重建，这些输出不能作为 Windows 运行合格的发布包。正式 Windows 构建继续由原生 Windows runner 生成，并运行新增资源检查及既有 CLI/应用自测。
 
 仅提交修复分支。main 保持 d616d4b7，未合并、推送、发布、重打标签或替换现有安装应用；正式安装版需后续发布更新才能包含这些改动。
+
+后续状态：已按用户授权复核并合入本地 main，见[合并验收记录](2026-10-29-ecoai-windows-branding-main-verification.md)。
