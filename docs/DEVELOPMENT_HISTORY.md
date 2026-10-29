@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-29 — MCP 与技能发现复测后合并本地 main
+
+- **Type**: docs / integration
+- **What**: 按用户授权，对独立分支 `codex/mcp-skill-discovery-updates` 的 `95720ab8` 重新测试和复审后，快进合入本地 `main`；本轮未修改应用实现。
+- **Verification**: 新跑完整 Vitest 5748 项通过、11 项条件跳过，类型及构建通过；46 项 Electron 覆盖通过（Python/R 来源用例指定已有解释器补跑），新 macOS ARM64 包在仓库外通过 CLI 与 7 项自测及签名完整性检查。独立复审无阻断。合并后类型、315 项定向回归及 11 项 Electron 再次通过。见 `docs/reviews/2026-10-29-ecoai-mcp-skill-discovery-main-verification.md`。
+- **Impact**: 本地合并，保留功能分支；未推送、发布或替换安装版。
+
 ### 2026-10-29 — 迁移 MCP 可靠性、GitHub 技能发现与 CLI 打包修复
 
 - **Type**: feat / fix
