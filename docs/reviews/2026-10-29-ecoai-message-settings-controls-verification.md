@@ -26,3 +26,5 @@
 日志、首次失败和最终截图位于 `/Users/liuyue/Documents/Codex/2026-10-29/ecoai-message-controls/`。`interactive-preview.png` 同时展示消息动作和通知设置；预览运行在独立 user-data、数据库、技能根与工作区，以项目共用 mock 模型生成示例会话，未复用真实凭证或正式数据。
 
 预览运行资料在 `/Users/liuyue/Library/Application Support/EcoAI-Science UI Polish Preview/`，当前窗口为「图标与勾选控件预览」。此前主分支预览未被本轮关闭。只提交本分支；main 保持 781f61e8，未推送、发布、修改安装版或自动合并。本轮为 macOS Electron 验收，没有宣称 Windows/Linux 原生视觉验收。
+
+后续状态：已按用户授权重新验证并合入本地 main，见[合并验收记录](2026-10-29-ecoai-message-settings-controls-main-verification.md)。
