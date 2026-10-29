@@ -4662,7 +4662,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
     return (
       <div className="app-shell">
         <div className="topbar">
-          <span className="brand">EcoAI</span>
+          <span className="brand">EcoAI-Science</span>
         </div>
         {/**
           * **这一处走整页，不是窄栏**（2026-09-16）。这是一条**早退分支**：

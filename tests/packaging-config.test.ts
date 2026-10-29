@@ -23,6 +23,14 @@ describe("electron-builder.yml", () => {
     expect(config.dmg.title).toBe("EcoAI-Science")
   })
 
+  it("Windows 写入品牌图标和完整产品名称，只跳过证书签名", () => {
+    expect(config.win.signAndEditExecutable).toBe(true)
+    expect(config.win.signExecutable).toBe(false)
+    expect(config.win.icon).toBe("packaging/icon.ico")
+    expect(config.nsis.installerIcon).toBe(config.win.icon)
+    expect(config.nsis.uninstallerIcon).toBe(config.win.icon)
+  })
+
   it("mac 包 ad-hoc 签名，而不是完全不签（不签的包在 Apple Silicon 上报「已损坏」）", () => {
     expect(config.mac.identity).not.toBeNull()
     expect(config.mac.identity).toBeDefined()

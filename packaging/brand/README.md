@@ -7,12 +7,14 @@
 | ecoai-original.png | 用户原图，原样保留 |
 | ecoai-logo.png | 完整透明 Logo：三叶、金色弧线与 EcoAI 字样；用于 README 和品牌展示 |
 | ecoai-mark.png | 透明三叶标识；用于 App 顶栏、欢迎页和主助手头像 |
-| ../icon.png、../icon.svg | `npm run make-icon` 从三叶标识生成的 1024px 安装包图标；SVG 嵌入 PNG，并非矢量重绘 |
+| ../icon.png、../icon.svg、../icon.ico | `npm run make-icon` 从三叶标识生成的 1024px 安装包图标及 Windows 16–256px ICO；SVG 嵌入 PNG，并非矢量重绘 |
 | ../tray-icon.png、../tray-icon.svg | 同一命令生成的 36px 黑色透明托盘模板图；macOS 按主题着色 |
 
 两张透明母图通过内置 `image_gen` 编辑工具生成，没有调用 CLI 或单独的图像 API。保留原有三叶构图和绿色体系；完整图保留金色弧线及准确的 EcoAI 大小写。小图标省去字样与弧线，适应 32px 使用场景。PNG 均含实际 alpha 透明通道；不是矢量文件。
 
-修改母图后，在仓库根目录执行 `npm run make-icon`，再执行构建。旧 `rp-mark.svg` 仅保留为历史源文件，当前构建不再引用。
+修改母图后，在仓库根目录执行 `npm run make-icon`，再执行构建。仅更新 Windows ICO 时可运行 `npx electron scripts/make-icon.mjs --windows-only`，它从现有 `icon.png` 转换，不重生成其他已接受素材。
+
+旧 `rp-mark.svg` 仅保留为历史源文件，当前构建不再引用。
 
 ## 完整 Logo 编辑提示词
 

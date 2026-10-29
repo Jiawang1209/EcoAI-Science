@@ -8,6 +8,13 @@
 
 **每完成一次开发变更（feat / fix / refactor / docs / data / perf / chore），都要在下方变更日志的最顶部追加一条。**
 
+### 2026-10-29 — 修复 Windows 原生图标与窗口短名称
+
+- **Type**: fix
+- **What**: 在 `codex/windows-icon-full-name` 恢复 Windows EXE 图标/产品资源编辑，单独跳过证书签名；从现有 EcoAI 图标生成七尺寸 ICO，显式接入应用/安装器/卸载器，增加实际 PE 主图标和完整产品名核验及 Windows CI 门。HTML 与故障页标题统一为 EcoAI-Science，原生窗口/打包身份断言同步加强。
+- **Verification**: 旧配置和窗口标题先复现失败；42 项相关回归、类型/构建及 4 项 Electron 通过。Windows 三份实际跨构建 EXE 的主图标逐帧匹配、主程序全名通过；macOS ARM64 包 CLI 和 7 项自测通过。独立复审无阻断。见 `docs/reviews/2026-10-29-ecoai-windows-branding-verification.md`。
+- **Impact**: 原图、Mac 图标和内部兼容身份不变；只提交分支，未改 main/推送/发布/替换安装版。Windows 跨构建仅验证资源，不代替原生运行验收。
+
 ### 2026-10-29 — MCP 与技能发现复测后合并本地 main
 
 - **Type**: docs / integration

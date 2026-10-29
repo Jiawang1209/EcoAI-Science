@@ -4,7 +4,8 @@ import { test, expect, 开一段临时会话 } from "./fixtures.js"
 
 test("EcoAI-Science与折叠、快捷键按钮始终单行，展开侧栏加宽并对齐", async ({ dawn }, info) => {
   const { page, app, dir } = dawn
-  await expect(page).toHaveTitle("EcoAI")
+  await expect(page).toHaveTitle("EcoAI-Science")
+  expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.getTitle())).toBe("EcoAI-Science")
   await expect(page.locator(".topbar .brand-name")).toHaveText("EcoAI-Science")
   expect(await app.evaluate(({ app }) => app.getName())).toBe("EcoAI-Science")
   expect(realpathSync(await app.evaluate(({ app }) => app.getPath("userData")))).toBe(realpathSync(join(dir, "electron-user-data")))

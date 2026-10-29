@@ -111,6 +111,8 @@ try {
     const identity = await app.evaluate(({ app }) => ({ name: app.getName(), version: app.getVersion(), packaged: app.isPackaged, userData: app.getPath('userData') }))
     const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
     expect(identity).toMatchObject({ name: NAME, version: pkg.version, packaged: true })
+    await expect(page).toHaveTitle(NAME)
+    expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).toBe(NAME)
     expect(realpathSync(identity.userData)).toBe(realpathSync(join(dir, 'electron-user-data')))
     await expect(page.locator('.brand-name')).toHaveText(NAME)
     console.log(`    ${identity.name} ${identity.version} ${process.platform}/${process.arch}`)
