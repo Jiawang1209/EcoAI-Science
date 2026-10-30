@@ -152,12 +152,12 @@ describe("侧栏 · 新建任务是唯一的主动作", () => {
     )
   })
 
-  it("配置里没有 agent 时禁用，并说明原因", () => {
+  it("未配置时禁用新建任务，配置由主区向导承接", () => {
     render(<SessionSidebar {...base} agents={[]} />)
     expect((screen.getByRole("button", { name: "新建任务" }) as HTMLButtonElement).disabled).toBe(
       true,
     )
-    expect(screen.getByText(/还没有可用的 agent/)).toBeDefined()
+    expect(screen.queryByText(/还没有可用的 agent/)).toBeNull()
   })
 })
 

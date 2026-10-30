@@ -1088,6 +1088,14 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
    * （e2e 抓的：第 ② 段解释器还没来得及选，屏幕就换了）。
    */
   const [向导中, 设向导中] = useState(false)
+  // 当次渲染就决定首屏，不能等 effect 再把旧空态替换掉。
+  const 显示向导 = !跳过向导 && (向导中 || 没有钥匙)
+  const 打开配置向导 = () => {
+    设向导起点("welcome"); 设向导中(true)
+    记跳过(false); 设跳过向导(false)
+    setActiveSessionId(undefined); setView("conversation")
+    setDockOpen(false); 关掉设置()
+  }
   useEffect(() => {
     if (没有钥匙 && !跳过向导) 设向导中(true)
   }, [没有钥匙, 跳过向导])
@@ -5172,7 +5180,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
     )
   })() : null
   return (
-    <div className="app-shell" key={向导中 && !跳过向导 ? "setup" : lang} data-sidebar-collapsed={sidebarCollapsed} style={{ "--dawn-sidebar-content-w": `${sidebarWidth}px` } as React.CSSProperties}>
+    <div className="app-shell" key={显示向导 ? "setup" : lang} data-sidebar-collapsed={sidebarCollapsed} style={{ "--dawn-sidebar-content-w": `${sidebarWidth}px` } as React.CSSProperties}>
       <div className="topbar">
         <div className="topbar-navigation">
         {/**
@@ -5753,7 +5761,9 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                 currentKernels={对话内核}
               />
             </>
-          ) : 向导中 && !跳过向导 ? (
+          ) : !目录到手 || !凭证到手 ? (
+            <div className="conversation empty-conv"><Loader label={t("正在读取启动配置")} /></div>
+          ) : 显示向导 ? (
             <SetupWizard
               key={向导起点}
               initialStep={向导起点}
@@ -5896,6 +5906,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                 return picked.path
               }}
               onOpenSettings={actions.openSettings}
+              onOpenSetup={打开配置向导}
             />
           )}
           {/* 原生终端占据主区；原对话保持挂载，CLI 在同一 PTY 中运行。 */}
@@ -6382,9 +6393,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
         onOpenSettings={id => 开设置栏(id)}
         alerts={<>
           {!ready ? <span role="status">{t("未连接")}</span> : null}
-          {没有钥匙 ? <Button variant="text" size="inline" className="caveat statusbar-setup" onClick={() => {
-            设向导起点("welcome"); 记跳过(false); 设跳过向导(false); setView("conversation")
-          }}>{t("还没有填任何 API key，暂时不能对话——点这里填一个")}</Button> : null}
+          {没有钥匙 ? <Button variant="text" size="inline" className="caveat statusbar-setup" onClick={打开配置向导}>{t("还没有填任何 API key，暂时不能对话——点这里填一个")}</Button> : null}
           <StatusNotices notes={notes} />
         </>}
       />

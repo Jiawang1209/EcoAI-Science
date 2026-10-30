@@ -998,9 +998,9 @@ export const EN: Readonly<Record<string, string>> = {
   "排队中": "after this turn",
   "{0} 张图": "{0} image(s)",
   "配置里还没有可用的 agent": "No usable agent in the config yet",
-  "还没有可用的 agent": "No usable agent yet",
-  "配置文件里没有 agent，或它需要的 API key 还没填。":
-    "The config has no agent, or the API key it needs is missing.",
+  "正在读取启动配置": "Reading startup configuration",
+  "先连接模型，再开始对话。": "Connect a model before starting a chat.",
+  "打开配置向导": "Open setup guide",
 
   /* ── 对话 ───────────────────────────────────────────────────── */
   "发送": "Send",

@@ -2153,16 +2153,6 @@ export function SessionSidebar({
       </div>
       <div className="side-scroll">
       {按内容 ? search?.内容结果 : null}
-      {agents.length === 0 ? (
-        <div className="pad">
-          <p className="hint">{t("配置里还没有可用的 agent")}</p>
-          {onOpenSettings ? (
-            <Button variant="text" size="inline" onClick={onOpenSettings}>
-              {t("去设置")}
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
 
       {/**
         * **项目 = 一个工作路径**（不是一个要新建、要选中的对象）。
@@ -7102,6 +7092,7 @@ export function EmptyConversation({
   onCancelEnhance,
   enhanceReason,
   onOpenSettings,
+  onOpenSetup,
   onPickDirectory,
   workspaceMenu,
   先出方案,
@@ -7157,6 +7148,8 @@ export function EmptyConversation({
   onPickDirectory?: ((path?: string) => Promise<string | null>) | undefined
   workspaceMenu?: WorkspaceMenuData | undefined
   onOpenSettings: () => void
+  /** 未配置时从完整四步向导开始；模型菜单仍通往设置。 */
+  onOpenSetup?: (() => void) | undefined
   /**
    * 空态那颗「先出方案」（2026-09-27）：按下只是记住「第一句按先出方案发」，由 App 在会话建出来、第一句发出去之前打开。
    * `不能的原因`：选的 agent 不是 native 时给。
@@ -7764,11 +7757,11 @@ export function EmptyConversation({
         </div>
       ) : (
         <EmptyState
-          title={t("还没有可用的 agent")}
-          description={t("配置文件里没有 agent，或它需要的 API key 还没填。")}
+          title={t("连接 AI 模型")}
+          description={t("先连接模型，再开始对话。")}
           action={
-            <Button variant="primary" onClick={onOpenSettings}>
-              {t("去设置")}
+            <Button variant="primary" onClick={onOpenSetup ?? onOpenSettings}>
+              {onOpenSetup ? t("打开配置向导") : t("去设置")}
             </Button>
           }
         />
