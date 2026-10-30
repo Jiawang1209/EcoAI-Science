@@ -34,6 +34,28 @@ function 摆一段(pi: Record<string, unknown>, stuck: { check?: () => string | 
 }
 
 describe("native：这一轮没做成要带 failed", () => {
+  it("存档收尾未完成时仍在跑，waitForIdle 与最终收尾事件都等它完成", async () => {
+    const { rt, 内部, 事件 } = 摆一段({ async prompt() {} })
+    let started!: () => void
+    let release!: () => void
+    const closing = new Promise<void>((resolve) => { started = resolve })
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    const archives = rt as unknown as { 存档们: Map<string, { 收尾: () => Promise<void> }> }
+    archives.存档们.set("s1", { 收尾: () => { started(); return gate } })
+    rt.write("s1", "你好")
+    await closing
+    expect(内部.sessions.get("s1")!.inFlight).toBe(1)
+    expect(事件.filter((e) => ["turn_end", "cost", "idle"].includes(e.kind))).toEqual([])
+    let settled = false
+    const waiting = rt.waitForIdle("s1").then(() => { settled = true })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+    release()
+    await waiting
+    expect(内部.sessions.get("s1")!.inFlight).toBe(0)
+    expect(事件.map((e) => e.kind)).toEqual(["turn_end", "cost", "idle"])
+  })
+
   it("pi 因输出长度上限停止时发出可继续的截断提示", () => {
     const { 内部, 事件 } = 摆一段({})
     内部.translate("s1", { type: "message_end", message: { role: "assistant", stopReason: "length" } })

@@ -107,13 +107,23 @@ export function 建更新服务(o: 建更新服务选项): 更新服务 {
       // 装不了的平台连下都不下：下下来也没有用，只是白占 200 MB
       if (!s.安装.能) throw new Error(s.安装.因为)
       const 资源 = s.安装.资源
-      闸 = new AbortController()
+      const 本次闸 = new AbortController()
+      闸 = 本次闸
       const 开 = o.管家.开始下载(资源.size)
       推(开)
       安装器
-        .下载(资源, (p) => 推(o.管家.下载进度(p.已下, p.共)), 闸.signal)
-        .then((路径) => 推(o.管家.下好了(路径)))
+        .下载(资源, (p) => {
+          if (闸 === 本次闸) 推(o.管家.下载进度(p.已下, p.共))
+        }, 本次闸.signal)
+        .then((路径) => {
+          if (闸 !== 本次闸) return
+          推(o.管家.下好了(路径))
+          闸 = undefined
+        })
         .catch((e) => {
+          // 取消后可以立即重试，旧连接晚来的进度、完成和错误都不属于新下载。
+          if (闸 !== 本次闸) return
+          闸 = undefined
           const 话 = e instanceof Error ? e.message : String(e)
           if (!话.includes("取消")) o.记?.(`下载失败：${话}`)
           // 人自己按的取消：退回「有新版」，不是报一个错
@@ -123,9 +133,13 @@ export function 建更新服务(o: 建更新服务选项): 更新服务 {
     },
 
     取消: () => {
-      闸?.abort()
+      const 取消闸 = 闸
+      if (!取消闸) return 信封(o.管家.当前状态())
       闸 = undefined
-      return 信封(o.管家.当前状态())
+      取消闸.abort()
+      const 状态 = o.管家.取消了()
+      推(状态)
+      return 信封(状态)
     },
 
     装: async () => {

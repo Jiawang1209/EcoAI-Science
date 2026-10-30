@@ -14,6 +14,7 @@ import {
   renameSync,
   rmSync,
   symlinkSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs"
 import { tmpdir } from "node:os"
@@ -43,6 +44,36 @@ export const 读 = (ws: string, p: string) => readFileSync(join(ws, p), "utf8")
 const 对象数 = (存档目录: string) => readdirSync(join(存档目录, "objects")).length
 
 describe("影子存档 · 拍", () => {
+  it("收尾计算内容身份时让出事件循环，桌面心跳先于快照完成", async () => {
+    const { ws, 存 } = 新的()
+    写(ws, "a.txt", "BASE")
+    await 存.开轮("e1")
+    写(ws, "a.txt", "AGNT")
+    const events: string[] = []
+    const heartbeat = new Promise<void>((resolve) => setImmediate(() => { events.push("heartbeat"); resolve() }))
+    await 存.收尾().then(() => events.push("snapshot"))
+    await heartbeat
+    expect(events).toEqual(["heartbeat", "snapshot"])
+  })
+
+  it("异步收尾尚在读取前面的文件时，后面同 stat 的用户修改不能算成 agent 的结尾", async () => {
+    const { ws, 存, 重开 } = 新的()
+    写(ws, "a.bin", Buffer.alloc(1024 * 1024))
+    const fixedWrite = (s: string) => {
+      写(ws, "z.txt", s)
+      utimesSync(join(ws, "z.txt"), 1_700_000_000, 1_700_000_000)
+    }
+    fixedWrite("BASE")
+    await 存.开轮("e1")
+    fixedWrite("AGNT")
+    const closing = 存.收尾()
+    await new Promise<void>((resolve) => setImmediate(() => { fixedWrite("USER"); resolve() }))
+    await closing
+    const r = await 重开().回退(之后("e1"))
+    expect(读(ws, "z.txt")).toBe("USER")
+    expect(r).toMatchObject({ restored: [], keep: [{ path: "z.txt", reason: "changed_after" }] })
+  })
+
   it("第一句的开头：把工作区里的文件都存一份；同一句第二件工具不再拍", async () => {
     const { ws, 存档目录, 存 } = 新的()
     写(ws, "a.py", "print(1)\n")
@@ -53,7 +84,7 @@ describe("影子存档 · 拍", () => {
     expect(存.段落()).toEqual([{ kind: "turn", entry: "e1", start: "s1" }])
   })
 
-  it("收尾只拍 stat、不存；下一句开头只存变过的", async () => {
+  it("收尾记录内容身份、不复制旧版本；下一句开头只存变过的", async () => {
     const { ws, 存档目录, 存 } = 新的()
     写(ws, "a.py", "print(1)\n")
     await 存.开轮("e1")
@@ -300,6 +331,182 @@ describe("影子存档 · 回退", () => {
  * 做了什么（哪怕只做了一半）都要说出来**。
  */
 describe("影子存档 · 回退的数据安全", () => {
+  it("收尾后、计划前用户新建同名空目录：保留，重开与再次删除目录也不抹掉用户归属", async () => {
+    const { ws, 存, 重开 } = 新的()
+    写(ws, "a.txt", "BASE")
+    await 一轮(存, "e1", () => rmSync(join(ws, "a.txt")))
+    mkdirSync(join(ws, "a.txt"))
+    expect(await 存.计划(之后("e1"))).toMatchObject({ restore: [], keep: [{ path: "a.txt", reason: "changed_after" }] })
+    const r = await 存.回退(之后("e1"))
+    expect(r).toMatchObject({ restored: [], keep: [{ path: "a.txt", reason: "changed_after" }] })
+    expect(lstatSync(join(ws, "a.txt")).isDirectory()).toBe(true)
+    await 重开().回退(之后("e1"))
+    expect(lstatSync(join(ws, "a.txt")).isDirectory()).toBe(true)
+    rmSync(join(ws, "a.txt"), { recursive: true })
+    const again = await 重开().回退(之后("e1"))
+    expect(again).toMatchObject({ restored: [], keep: [{ path: "a.txt", reason: "changed_after" }] })
+    expect(existsSync(join(ws, "a.txt"))).toBe(false)
+  })
+
+  it("成功移除文件后用户新建同名目录，跨文件回退不能丢掉这个用户变更", async () => {
+    let edit = () => {}
+    const { ws, 存, 重开 } = 新的({ 插一脚: (时机) => { if (时机 === "换下之后") edit() } })
+    写(ws, "a.txt", "BASE")
+    写(ws, "b.txt", "BASE")
+    await 一轮(存, "e1", () => rmSync(join(ws, "b.txt")))
+    await 一轮(存, "e2", () => {
+      写(ws, "a.txt", "AGNT")
+      写(ws, "b.txt", "AGNT")
+    })
+    edit = () => mkdirSync(join(ws, "b.txt"))
+    await 存.回退(之后("e2"))
+    edit = () => {}
+    expect(lstatSync(join(ws, "b.txt")).isDirectory()).toBe(true)
+    rmSync(join(ws, "b.txt"), { recursive: true })
+    const again = await 重开().回退(之后("e1", "e2"))
+    expect(again.keep).toContainEqual({ path: "b.txt", reason: "changed_after" })
+    expect(existsSync(join(ws, "b.txt"))).toBe(false)
+  })
+
+  it("收尾后同 inode、大小、mtime 的用户改动也保留，重开存档仍然认得", async () => {
+    const { ws, 存, 重开 } = 新的()
+    const p = join(ws, "script.txt")
+    写(ws, "script.txt", "BASE")
+    utimesSync(p, 1_700_000_000, 1_700_000_000)
+    await 一轮(存, "e1", () => {
+      写(ws, "script.txt", "AGNT")
+      utimesSync(p, 1_700_000_001, 1_700_000_001)
+    })
+    const before = lstatSync(p)
+    写(ws, "script.txt", "USER")
+    utimesSync(p, 1_700_000_001, 1_700_000_001)
+    expect(lstatSync(p)).toMatchObject({ ino: before.ino, size: before.size, mtimeMs: before.mtimeMs })
+    const r = await 重开().回退(之后("e1"))
+    expect(读(ws, "script.txt")).toBe("USER")
+    expect(r).toMatchObject({ restored: [], removed: [], keep: [{ path: "script.txt", reason: "changed_after" }], failed: [] })
+  })
+
+  it("同一 stat 的不同内容分别存档，下一轮回退恢复正确那一版", async () => {
+    const { ws, 存, 存档目录 } = 新的()
+    const fixedWrite = (s: string) => {
+      写(ws, "script.txt", s)
+      utimesSync(join(ws, "script.txt"), 1_700_000_000, 1_700_000_000)
+    }
+    fixedWrite("BASE")
+    await 一轮(存, "e1", () => fixedWrite("AGNT"))
+    await 存.开轮("e2")
+    expect(对象数(存档目录)).toBe(2)
+    fixedWrite("NEXT")
+    await 存.收尾()
+    const r = await 存.回退(之后("e2"))
+    expect(r).toMatchObject({ restored: ["script.txt"], failed: [] })
+    expect(读(ws, "script.txt")).toBe("AGNT")
+  })
+
+  it("旧版只有 stat 的快照无法证明当前内容归属，保守保留用户文件", async () => {
+    const { ws, 存, 存档目录, 重开 } = 新的()
+    写(ws, "a.txt", "BASE")
+    utimesSync(join(ws, "a.txt"), 1_700_000_000, 1_700_000_000)
+    await 一轮(存, "e1", () => {
+      写(ws, "a.txt", "AGNT")
+      utimesSync(join(ws, "a.txt"), 1_700_000_001, 1_700_000_001)
+    })
+    const ledger = join(存档目录, "snapshots.jsonl")
+    const rows = readFileSync(ledger, "utf8").trim().split("\n").map((line) => JSON.parse(line))
+    for (const row of rows) for (const entry of Object.values(row.set) as Record<string, unknown>[]) delete entry.sha256
+    writeFileSync(ledger, rows.map((row) => JSON.stringify(row)).join("\n") + "\n")
+    写(ws, "a.txt", "USER")
+    utimesSync(join(ws, "a.txt"), 1_700_000_001, 1_700_000_001)
+    const r = await 重开().回退(之后("e1"))
+    expect(读(ws, "a.txt")).toBe("USER")
+    expect(r).toMatchObject({ restored: [], removed: [], keep: [{ path: "a.txt", reason: "changed_after" }] })
+  })
+
+  it.each(["恢复", "移除"])("计划后同 stat 的用户修改也不被%s操作挪走", async (action) => {
+    let edit = () => {}
+    const { ws, 存 } = 新的({ 插一脚: (时机) => { if (时机 === "开始挪") edit() } })
+    const p = join(ws, "a.txt")
+    if (action === "恢复") 写(ws, "a.txt", "BASE")
+    await 一轮(存, "e1", () => {
+      写(ws, "a.txt", "AGNT")
+      utimesSync(p, 1_700_000_001, 1_700_000_001)
+    })
+    edit = () => {
+      写(ws, "a.txt", "USER")
+      utimesSync(p, 1_700_000_001, 1_700_000_001)
+    }
+    const r = await 存.回退(之后("e1"))
+    expect(读(ws, "a.txt")).toBe("USER")
+    expect(r).toMatchObject({ restored: [], removed: [] })
+    expect(r.failed.map((failure) => failure.path)).toEqual(["a.txt"])
+  })
+
+  it.each(["删除", "空目录"])("计划后用户把文件变成%s：保留用户的新状态", async (action) => {
+    let edit = () => {}
+    const { ws, 存 } = 新的({ 插一脚: (时机) => { if (时机 === "开始挪") edit() } })
+    写(ws, "a.txt", "BASE")
+    await 一轮(存, "e1", () => 写(ws, "a.txt", "AGNT"))
+    edit = () => {
+      rmSync(join(ws, "a.txt"))
+      if (action === "空目录") mkdirSync(join(ws, "a.txt"))
+    }
+    const r = await 存.回退(之后("e1"))
+    expect(r.restored).toEqual([])
+    expect(r.failed.map((failure) => failure.path)).toEqual(["a.txt"])
+    if (action === "空目录") expect(lstatSync(join(ws, "a.txt")).isDirectory()).toBe(true)
+    else expect(existsSync(join(ws, "a.txt"))).toBe(false)
+  })
+
+  it("新文件超过内容身份上限：身份未知时保留，不仅凭 stat 移除", async () => {
+    const { ws, 存 } = 新的({ 单个上限: 2 })
+    await 一轮(存, "e1", () => 写(ws, "large.txt", "AGNT"))
+    const r = await 存.回退(之后("e1"))
+    expect(读(ws, "large.txt")).toBe("AGNT")
+    expect(r).toMatchObject({ restored: [], removed: [], keep: [{ path: "large.txt", reason: "changed_after" }] })
+  })
+
+  it("收尾后的权限修改也保留，不把用户 chmod 当成同一版", async () => {
+    const { ws, 存 } = 新的()
+    写(ws, "run.sh", "BASE")
+    chmodSync(join(ws, "run.sh"), 0o600)
+    await 一轮(存, "e1", () => 写(ws, "run.sh", "AGNT"))
+    chmodSync(join(ws, "run.sh"), 0o700)
+    const r = await 存.回退(之后("e1"))
+    expect(读(ws, "run.sh")).toBe("AGNT")
+    expect(lstatSync(join(ws, "run.sh")).mode & 0o777).toBe(0o700)
+    expect(r.keep).toEqual([{ path: "run.sh", reason: "changed_after" }])
+  })
+
+  it("归档对象内容被换过时不恢复它，当前文件原地保留", async () => {
+    const { ws, 存, 存档目录 } = 新的()
+    写(ws, "a.txt", "BASE")
+    await 一轮(存, "e1", () => 写(ws, "a.txt", "AGNT"))
+    for (const name of readdirSync(join(存档目录, "objects"))) writeFileSync(join(存档目录, "objects", name), "FAKE")
+    const r = await 存.回退(之后("e1"))
+    expect(读(ws, "a.txt")).toBe("AGNT")
+    expect(r.restored).toEqual([])
+    expect(r.failed.map((failure) => failure.path)).toEqual(["a.txt"])
+  })
+
+  it.each(["开始挪", "换下之后"] as const)("%s时保留下来的用户修改，重开后再次回退也仍归用户", async (race) => {
+    let injected = false
+    let edit = () => {}
+    const { ws, 存, 重开 } = 新的({ 插一脚: (时机) => {
+      if (时机 === race && !injected) {
+        injected = true
+        edit()
+      }
+    } })
+    写(ws, "a.txt", "BASE")
+    await 一轮(存, "e1", () => 写(ws, "a.txt", "AGNT"))
+    edit = () => 写(ws, "a.txt", "USER")
+    await 存.回退(之后("e1"))
+    expect(读(ws, "a.txt")).toBe("USER")
+    const r = await 重开().回退(之后("e1"))
+    expect(读(ws, "a.txt")).toBe("USER")
+    expect(r.keep).toEqual([{ path: "a.txt", reason: "changed_after" }])
+  })
+
   it("agent 把目录换成指向外面的链接：不跟进去写，外面的文件一个字节不动", async () => {
     const { ws, 存 } = 新的()
     const 外面 = join(dirname(ws), "outside")
@@ -354,8 +561,8 @@ describe("影子存档 · 回退的数据安全", () => {
     写(ws, "data/raw/survey.csv", "原始数据")
     const r = await 存.回退(之后("e1"))
     expect(r.removed).toEqual(["data/x.csv"])
-    expect(r.failed.map((x) => x.path)).toEqual(["data"])
-    expect(r.failed[0]!.message).toMatch(/目录/)
+    expect(r.failed).toEqual([])
+    expect(r.keep).toEqual([{ path: "data", reason: "changed_after" }])
     expect(读(ws, "data/raw/survey.csv")).toBe("原始数据")
   })
 
@@ -398,18 +605,19 @@ describe("影子存档 · 回退的数据安全", () => {
     expect(r.failed).toEqual([])
   })
 
-  it("换下之后原处又冒出一个：它也先进废纸篓，不被覆盖", async () => {
+  it("换下之后原处又冒出用户文件：留在原处，停止恢复，换下的原版留在废纸篓", async () => {
     const box: { ws?: string } = {}
     const { ws, 存 } = 新的({ 插一脚: async (时机, p) => void (时机 === "换下之后" && writeFileSync(join(box.ws!, p), "半路冒出来的")) })
     box.ws = ws
     写(ws, "a.py", "v1")
     await 一轮(存, "e1", () => 写(ws, "a.py", "v2"))
     const r = await 存.回退(之后("e1"))
-    expect(r).toMatchObject({ restored: ["a.py"], failed: [] })
-    expect(r.appeared, "半路冒出来的那份也要交代给界面，不只写进清单").toEqual([{ path: "a.py", to: `${r.trash}/a.py~2` }])
-    expect(读(ws, "a.py")).toBe("v1")
+    expect(r.restored).toEqual([])
+    expect(r.appeared).toBeUndefined()
+    expect(r.failed).toEqual([{ path: "a.py", message: expect.stringContaining(`${r.trash}/a.py`) }])
+    expect(读(ws, "a.py")).toBe("半路冒出来的")
     const 篓里 = readdirSync(join(ws, r.trash!)).filter((f) => f.startsWith("a.py")).map((f) => 读(ws, `${r.trash}/${f}`))
-    expect(篓里.sort()).toEqual(["v2", "半路冒出来的"].sort())
+    expect(篓里).toEqual(["v2"])
   })
 
   it("最后一步就位失败、放回也失败：failed 里写清现在那份在废纸篓的哪儿", async () => {
@@ -590,7 +798,7 @@ describe("影子存档 · 复审补的几条", () => {
     expect(existsSync(join(ws, "p")), "原先就在的 p 不动").toBe(true)
   })
 
-  it("原处现在是个空目录：收掉它（不递归）再改回去；目录不进废纸篓", async () => {
+  it("原处现在是个空目录：缺少目录归属证据时保守保留，不删除目录来恢复文件", async () => {
     const { ws, 存 } = 新的()
     写(ws, "a.txt", "v1")
     await 一轮(存, "e1", () => {
@@ -598,7 +806,7 @@ describe("影子存档 · 复审补的几条", () => {
       mkdirSync(join(ws, "a.txt"))
     })
     const r = await 存.回退(之后("e1"))
-    expect(r).toMatchObject({ restored: ["a.txt"], failed: [] })
-    expect(读(ws, "a.txt")).toBe("v1")
+    expect(r).toMatchObject({ restored: [], keep: [{ path: "a.txt", reason: "changed_after" }], failed: [] })
+    expect(lstatSync(join(ws, "a.txt")).isDirectory()).toBe(true)
   })
 })

@@ -4,12 +4,19 @@
   "private": true,
   "main": "main.js",
   "scripts": {
+    "postinstall": "node ../../scripts/fix-node-pty.mjs",
     "start": "electron ."
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "electron": "^43.3.0",
+    "electron": "^43.8.4",
     "node-pty": "^1.1.0"
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "overrides": {
+    "undici": "^8.12.2"
   }
 }

@@ -16,7 +16,8 @@ test.use({ dawnOptions: { providersYaml: `agents:
     capabilities: [chat, exec]
 ` } })
 
-test("280px侧栏同时有模型、推理和适配器配置时，按钮不压扁且各菜单可用", async ({ dawn: { page } }) => {
+test("280px侧栏同时有模型、推理和适配器配置时，按钮不压扁且各菜单可用", async ({ dawn: { page, app } }) => {
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(1920, 1080))
   await page.evaluate(async () => {
     const w = window as unknown as { dawn: { invoke: (op: string, req: unknown) => Promise<{ data?: unknown }> } }
     const projects = (await w.dawn.invoke("listProjects", {})).data as { workspace: string }[]

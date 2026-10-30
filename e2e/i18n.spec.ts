@@ -147,9 +147,9 @@ test("**英文界面上每一屏都没有汉字**", async ({ dawn }) => {
    */
   await 屏("设置那一栏", () => page.getByRole("button", { name: "Settings", exact: true }).click())
   await page.getByRole("button", { name: "Expand", exact: true }).click()
-  await 屏("Skills", () => page.getByRole("button", { name: "Skills" }).click())
-  await 屏("子 Agent", () => page.getByRole("button", { name: "Subagents" }).click())
-  await 屏("插件", () => page.getByRole("button", { name: "Plugins" }).click())
+  await 屏("Skills", () => page.getByRole("button", { name: "Skills", exact: true }).click())
+  await 屏("子 Agent", () => page.getByRole("button", { name: "Subagents", exact: true }).click())
+  await 屏("插件", () => page.getByRole("button", { name: "Plugins", exact: true }).click())
   await 屏("MCP", () => page.getByRole("button", { name: "MCP servers" }).click())
 
   // 设置的四块各看一遍——它们是同一屏的四种内容

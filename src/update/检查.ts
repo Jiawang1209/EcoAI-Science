@@ -37,6 +37,8 @@ export class 更新管家 {
   private 状态: 更新状态
   /** 最近一次查到的那条。`设偏好` 要靠它就地重算，不必再联网 */
   private 最近: 发布一条 | undefined
+  /** 自动与手动检查共用一次请求，避免先发的结果晚到后覆盖新状态。 */
+  private 检查中: Promise<更新状态> | undefined
   private readonly 现在: () => number
 
   constructor(private readonly o: 管家选项) {
@@ -56,12 +58,24 @@ export class 更新管家 {
    * @param 自动 启动时那次（受「auto」开关与 1 小时节流约束）；false = 人自己点的
    */
   async 检查({ 自动 }: { 自动: boolean }): Promise<更新状态> {
+    // 下载与安装要守住同一个版本、资源和包路径，检查不能打断它们。
+    if (this.状态.阶段 === "downloading" || this.状态.阶段 === "ready") return this.状态
+    if (this.检查中) return this.检查中
     const 盘 = this.盘()
     if (自动) {
       if (!盘.auto) return this.状态
       if (盘.lastCheckedAt !== undefined && this.现在() - 盘.lastCheckedAt < 自动检查间隔) return this.状态
     }
     this.状态 = { 阶段: "checking", 当前: this.o.当前版本 }
+    this.检查中 = this.查最新()
+    try {
+      return await this.检查中
+    } finally {
+      this.检查中 = undefined
+    }
+  }
+
+  private async 查最新(): Promise<更新状态> {
     let 一条: 发布一条 | undefined
     try {
       一条 = await this.o.源.查最新()
@@ -76,6 +90,8 @@ export class 更新管家 {
       return this.状态
     }
     const 查于 = this.现在()
+    // 联网期间人可能已经改了偏好；只在最新盘面上补本次检查的时间。
+    const 盘 = this.盘()
     this.o.写状态({ ...盘, lastCheckedAt: 查于 })
     this.最近 = 一条
     this.状态 = this.算(一条, 查于, 盘.ignored)

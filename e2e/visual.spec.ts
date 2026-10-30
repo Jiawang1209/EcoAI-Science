@@ -50,6 +50,8 @@
 import { test, expect, CANNED_REPLY, 开一段临时会话, 在项目里开会话, 进坞 } from "./fixtures.js"
 import type { Locator, Page } from "@playwright/test"
 
+test.use({ dawnOptions: { stableGpuRendering: true } })
+
 /**
  * 切主题，**并且回到对话页**。
  *
@@ -343,6 +345,13 @@ for (const theme of ["亮色", "暗色"] as const) {
        * 看着像图片对比不稳定，其实是**测试自己把界面留在了 hover 态**。
        */
       await page.mouse.move(0, 0)
+
+      // 固定软件光栅，同时保留 GPU 合成、backdrop-filter 与阴影覆盖。
+      expect(await dawn.app.evaluate(({ app }) => app.isHardwareAccelerationEnabled())).toBe(true)
+      expect(await dawn.app.evaluate(({ app }) => app.getGPUFeatureStatus().gpu_compositing)).toBe("enabled")
+      // Chromium 会返回比 Electron 类型声明更多的 GPU 特性，仍在运行时严格核对值。
+      expect(await dawn.app.evaluate(({ app }) => Reflect.get(app.getGPUFeatureStatus(), "skia_graphite"))).toBe("disabled_off")
+      expect(await dawn.app.evaluate(({ app }) => app.getGPUFeatureStatus().rasterization)).toBe("disabled_software")
 
       await expect(page).toHaveScreenshot(`${screen.name}-${theme}.png`, {
         animations: "disabled",

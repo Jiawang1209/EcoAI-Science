@@ -3,6 +3,13 @@ import Database from"better-sqlite3"
 import{migrate}from"../../src/store/schema.js"
 import{BotStore}from"../../src/store/bots.js"
 import{BotDelivery}from"../../src/bot/delivery.js"
+it("非 native 会话保留待送结果，不调用 native 状态或发送；恢复支持后照常送达",async()=>{
+ const db=new Database(":memory:");migrate(db);const store=new BotStore(db)
+ const bot=store.create({name:"b",role:"r",instructions:"i"});store.enqueueResult({resultId:"unsupported",ownerSessionId:"main",botId:bot.id,teamId:"t",taskId:"task",attemptId:"a",memberSessionId:"s",status:"completed",summary:"result",artifacts:[]})
+ let eligible=false,history="",sent=0
+ const delivery=new BotDelivery({store,eligible:()=>eligible,busy:()=>{if(!eligible)throw Error("native only");return false},history:async()=>history,send:async(_id,text)=>{sent++;history=text}})
+ try{await expect(delivery.flush("main")).resolves.toBeUndefined();expect(sent).toBe(0);expect(store.pendingResults("main")).toHaveLength(1);eligible=true;await delivery.flush("main");expect(sent).toBe(1);expect(store.pendingResults("main")).toHaveLength(0)}finally{db.close()}
+})
 it("忙碌时不发、转录已有结果不重发、送达失败保留待送",async()=>{
  const db=new Database(":memory:");migrate(db);const store=new BotStore(db)
  const bot=store.create({name:"b",role:"r",instructions:"i"});store.enqueueResult({resultId:"r",ownerSessionId:"main",botId:bot.id,teamId:"t",taskId:"task",attemptId:"a",memberSessionId:"s",status:"completed",summary:"result",artifacts:[]})

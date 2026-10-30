@@ -1,4 +1,5 @@
 import type { FetchLike } from '@modelcontextprotocol/sdk/shared/transport.js'
+import { fetchMcpSameOrigin } from './redirect-fetch.js'
 
 const CANCEL_REASON = 'DAWN_MCP_REQUEST_FINISHED'
 export const isMcpFetchCancellation = (error: Error): boolean => error.message.includes(CANCEL_REASON)
@@ -75,7 +76,7 @@ export class McpRequestFetch {
     if (token && this.retiredTokens.delete(token)) return new Response(null, { status: 405 })
     if (active && token && ++active.resumeAttempts > 2) throw new Error('MCP 响应续传未取得进展，结果未知；不会重新发送工具调用。')
     const signal = active ? (init?.signal ? AbortSignal.any([active.controller.signal, init.signal]) : active.controller.signal) : init?.signal
-    const response = await fetch(input, { ...init, ...(signal ? { signal } : {}) })
+    const response = await fetchMcpSameOrigin(input, { ...init, ...(signal ? { signal } : {}) })
     if (route && rpcId !== undefined && this.routes.get(rpcId) === route) route.dedicated = response.status !== 202
     if (response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'text/event-stream' || !response.body) return response
     const shared = !active && init?.method?.toUpperCase() === 'GET' ? { receivedResponse: false } : undefined

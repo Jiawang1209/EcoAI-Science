@@ -7,6 +7,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { 更新管家 } from "../../src/update/检查.js"
 import type { 发布源, 发布一条 } from "../../src/update/发布源.js"
+import type { 更新盘面 } from "../../src/update/状态.js"
 import type { 平台事实 } from "../../src/update/资源.js"
 
 const 一条 = (版本: string): 发布一条 => ({
@@ -164,5 +165,76 @@ describe("设偏好", () => {
     await 管家.检查({ 自动: false })
     const s = 管家.设偏好({ ignore: "0.0.3" })
     expect(s.阶段).toBe("ignored")
+  })
+})
+
+describe("检查期间的并发操作", () => {
+  it("保留检查期间改过的自动检查和忽略偏好，并用新偏好算结果", async () => {
+    const 待发布 = Promise.withResolvers<发布一条 | undefined>()
+    let 盘: 更新盘面 = { auto: true }
+    const 管家 = new 更新管家({
+      当前版本: "0.0.2",
+      源: { 查最新: () => 待发布.promise },
+      事实,
+      读状态: () => 盘,
+      写状态: (下) => { 盘 = 下 },
+      现在: () => 123,
+    })
+    const 检查 = 管家.检查({ 自动: false })
+    管家.设偏好({ auto: false, ignore: "v0.0.6" })
+    待发布.resolve(一条("0.0.6"))
+
+    expect((await 检查).阶段).toBe("ignored")
+    expect(盘).toEqual({ auto: false, ignored: "v0.0.6", lastCheckedAt: 123 })
+  })
+
+  it("并发检查共用一个请求，后发调用不会另开请求覆盖结果", async () => {
+    const 待发布 = Promise.withResolvers<发布一条 | undefined>()
+    const { 源, 调用 } = 假源(() => 待发布.promise)
+    const 管家 = 建(源)
+    const 自动 = 管家.检查({ 自动: true })
+    const 手动 = 管家.检查({ 自动: false })
+    expect(调用.次).toBe(1)
+    待发布.resolve(一条("0.0.6"))
+    expect(await 自动).toEqual(await 手动)
+    expect(管家.当前状态()).toMatchObject({ 阶段: "available", 版本: "0.0.6" })
+  })
+
+  it("共用请求失败后可重试，失败不覆盖期间改过的偏好", async () => {
+    const 待发布 = Promise.withResolvers<发布一条 | undefined>()
+    let 次数 = 0
+    const 管家 = 建({ 查最新: () => ++次数 === 1 ? 待发布.promise : Promise.resolve(一条("0.0.6")) })
+    const 第一次 = 管家.检查({ 自动: false })
+    const 第二次 = 管家.检查({ 自动: false })
+    管家.设偏好({ auto: false, ignore: "0.0.6" })
+    待发布.reject(new Error("网络断开"))
+    expect(await 第一次).toMatchObject({ 阶段: "failed", 原话: "网络断开", 失败于: "检查" })
+    expect(await 第二次).toEqual(await 第一次)
+    expect((await 管家.检查({ 自动: false })).阶段).toBe("ignored")
+    expect(次数).toBe(2)
+  })
+
+  it("下载期间检查不联网、不丢掉进度，完成后保留可安装的包", async () => {
+    const { 源, 调用 } = 假源(async () => 一条("0.0.6"))
+    const 管家 = 建(源)
+    await 管家.检查({ 自动: false })
+    管家.开始下载(100)
+    管家.下载进度(50, 100)
+    const 检查 = 管家.检查({ 自动: false })
+    expect(管家.当前状态()).toMatchObject({ 阶段: "downloading", 已下: 50 })
+    管家.下好了("/tmp/update.zip")
+    await 检查
+    expect(管家.当前状态()).toMatchObject({ 阶段: "ready", 包路径: "/tmp/update.zip" })
+    expect(调用.次).toBe(1)
+  })
+
+  it("已下好时检查不联网、不替换待装状态", async () => {
+    const { 源, 调用 } = 假源(async () => 一条("0.0.6"))
+    const 管家 = 建(源)
+    await 管家.检查({ 自动: false })
+    管家.开始下载(100)
+    const 已下好 = 管家.下好了("/tmp/update.zip")
+    expect(await 管家.检查({ 自动: false })).toEqual(已下好)
+    expect(调用.次).toBe(1)
   })
 })

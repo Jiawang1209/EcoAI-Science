@@ -86,6 +86,7 @@ test("查找导出直接属于主对话内容区，与面板分行，键盘返�
       await page.mouse.move(0, 0)
     }
     const scroller = (await scroll.boundingBox())!
+    expect(scroller.height, "短窗口仍须留出可读的转录滚动区").toBeGreaterThan(48)
     // 滚轮落在滚动条一侧时仍能向上滚动。
     await scroll.evaluate(el => { el.scrollTop = el.scrollHeight })
     const before = await scroll.evaluate(el => el.scrollTop)

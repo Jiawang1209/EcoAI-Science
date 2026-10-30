@@ -356,8 +356,8 @@ test("**新建任务那一屏：坞里另开一段是普通对话，不带文件
  * 笔记本屏（坞开着）主区附栏折两行，坞里也两行；大屏主区一行放得下，坞里跟着排成一行（「上传文件」只留图标）。
  * 两种宽度都量：只量一种的话，另一种会悄悄错开一行（实测 1920 下 203 vs 176）。
  */
-for (const [宽, 高] of [[1280, 900], [1920, 1080]] as const) {
-  test(`**${宽} 宽：坞里的输入卡与主区一样高、底边对齐**`, async ({ dawn }) => {
+for (const [宽, 高] of [[1280, 900], [1920, 1080], [1280, 480]] as const) {
+  test(`**${宽} 宽${高 === 480 ? " · 480 高" : ""}：坞里的输入卡与主区一样高、底边对齐**`, async ({ dawn }) => {
     const { page, app } = dawn
     await app.evaluate(({ BrowserWindow }, [w, h]) => BrowserWindow.getAllWindows()[0]!.setContentSize(w!, h!), [宽, 高])
     await 开一段临时会话(page, "你好")
@@ -368,6 +368,11 @@ for (const [宽, 高] of [[1280, 900], [1920, 1080]] as const) {
       return 主 && 侧 ? { 高差: Math.round(Math.abs(主.height - 侧.height)), 底差: Math.round(Math.abs(主.y + 主.height - (侧.y + 侧.height))) } : undefined
     }
     await expect.poll(量, { timeout: 10_000 }).toEqual({ 高差: 0, 底差: 0 })
+    if (高 === 480) {
+      for (const root of [主区(page), 坞(page)]) {
+        expect((await root.locator('.turns > div').first().boundingBox())!.height, "矮窗两处转录均须保留可读空间").toBeGreaterThan(48)
+      }
+    }
     // 空占位文字不撑高；真实内容仍能增高，清空后收回。
     const input = 框(坞(page))
     const 空高 = await input.evaluate(el => el.getBoundingClientRect().height)
@@ -384,6 +389,6 @@ for (const [宽, 高] of [[1280, 900], [1920, 1080]] as const) {
     await input.fill("")
     await expect.poll(() => input.evaluate(el => el.getBoundingClientRect().height)).toBe(空高)
     await expect.poll(量).toEqual({ 高差: 0, 底差: 0 })
-    await test.info().attach("aligned-composers", { body: await page.screenshot(), contentType: "image/png" })
+    await test.info().attach("aligned-composers", { body: await page.screenshot({ path: test.info().outputPath("aligned-composers.png") }), contentType: "image/png" })
   })
 }

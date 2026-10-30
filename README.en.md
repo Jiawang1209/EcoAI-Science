@@ -89,7 +89,7 @@ Desktop packages include the application runtime; Node.js is not required for or
 
 ## Run from source
 
-You need Node.js ≥ 22 and npm. On Linux, some native modules also require build tools and Python; see the [packaging guide](docs/打包与发布.md).
+You need Node.js 22.22.2+ (22.x), 24.15.0+ (24.x), or 26+ and npm. On Linux, some native modules also require build tools and Python; see the [packaging guide](docs/打包与发布.md).
 
 ```bash
 git clone https://github.com/Jiawang1209/EcoAI-Science.git

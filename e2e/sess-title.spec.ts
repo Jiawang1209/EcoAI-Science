@@ -191,6 +191,7 @@ test.describe("项目里的那条", () => {
 
     // 给它一个工作目录：这一步之后它会从「会话」栏挪到「项目」栏
     await page.locator(".composer-card").getByRole("button", { name: /工作目录/ }).click()
+    await page.getByRole("menuitem", { name: "另选文件夹…", exact: true }).click()
     await expect(page.locator(".proj-list .proj-item")).toHaveCount(1, { timeout: 30_000 })
 
     await page.locator(".proj-session-list .sess-title").first().hover()
@@ -274,17 +275,28 @@ test("**窗口矮的时候，靠下那行的悬停卡整张都在屏幕里**", a
   // 标题写长：卡上标题要换行摊开，卡就高；行那么多：最后一行贴着侧栏底
   const 长题 = "这一段的标题故意写得很长很长，长到悬停卡上要换好几行才摊得开，这样卡才够高，才能把那个伸出窗口底的毛病逼出来"
   // 2026-08-23 侧栏少了五个固定入口，要多堆几段才能把最后一行压到下半截
-  for (const n of ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]) await 开一段临时会话(page, `第${n}段·${长题}`)
-  // 把窗口压矮，让最后一行落到窗口下沿附近
+  for (const n of ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六"]) await 开一段临时会话(page, `第${n}段·${长题}`)
+  // 自动摘要较短；用真实重命名入口准备足够高的卡，确保夹紧逻辑真的被触发。
+  const 末行 = page.locator(".session-list li").last()
+  await 末行.getByRole("button", { name: /会话操作/ }).click()
+  await page.getByRole("menuitem", { name: "重命名", exact: true }).click()
+  await page.locator(".sess-rename").fill(长题.repeat(3).slice(0, 200))
+  await page.locator(".sess-rename").press("Enter")
+  // 把窗口压矮，让最后一行落到侧栏滚动区的下沿附近。
   await page.setViewportSize({ width: 1100, height: 560 })
   const 行 = page.locator(".session-list li .sess-title").last()
-  await 行.scrollIntoViewIfNeeded()
+  // 将最后一行放到可滚动侧栏的底部；不能依赖固定条数碰巧落在窗口下方。
+  await page.locator(".side-scroll").evaluate(el => { el.scrollTop = el.scrollHeight })
+  await expect(行).toBeInViewport()
   const 行框 = (await 行.boundingBox())!
-  expect(行框.y, "这一行没在下半截，用例测不到要测的事").toBeGreaterThan(560 * 0.7)
+  const 滚动区 = (await page.locator(".side-scroll").boundingBox())!
+  expect(行框.y + 行框.height, "最后一行没贴近侧栏底部").toBeGreaterThan(滚动区.y + 滚动区.height - 32)
   // 行的一角可能压在侧栏底那条之下，不做可点性检查，直接把鼠标挪到行上
   await 行.hover({ force: true })
   const 卡 = page.locator(".sess-hover-card")
   await expect(卡).toHaveCount(1)
+  // 不夹紧时这张卡确实会出屏；仅仅位于下半屏不足以证明回归被覆盖。
+  expect(行框.y + (await 卡.boundingBox())!.height).toBeGreaterThan(560)
   await expect.poll(async () => {
     const b = await 卡.boundingBox()
     return b ? b.y + b.height <= 560 && b.y >= 0 : false

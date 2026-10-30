@@ -8,7 +8,7 @@
  *   ④ 在跑时拒。
  */
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { NativeRuntime } from "../../src/runtime/native.js"
@@ -62,6 +62,48 @@ async function 起一段(名: string, 选项: { resume?: boolean; checkpoints?: 
 }
 
 describe("回退这一轮 · 真 pi", () => {
+  it.each(["cost", "idle"] as const)("%s 边界之后的同 stat 用户修改保留：存档必须先于最终收尾事件完成", { timeout: 60_000 }, async (boundary) => {
+    let calls = 0
+    const local = await startMockInferenceServer({ toolCall: () => calls++ === 0
+      ? { toolName: "bash", args: { command: "printf 'AGNT' > target.txt && touch -t 202311142213.20 target.txt" } }
+      : undefined })
+    const root = join(dir, `checkpoint-boundary-${boundary}`)
+    const workspace = join(root, "workspace")
+    mkdirSync(workspace, { recursive: true })
+    const target = join(workspace, "target.txt")
+    writeFileSync(target, "BASE")
+    const models = join(root, "models.json")
+    writeFileSync(models, JSON.stringify(mockModelsJson(local.url)))
+    const runtime = new NativeRuntime({ modelsPath: models })
+    const sessionId = `checkpoint-boundary-${boundary}`
+    const seen: { bytes: string; sameStat: boolean }[] = []
+    runtime.attach(sessionId, (event) => {
+      if (event.kind !== boundary || seen.length > 0) return
+      const before = lstatSync(target)
+      const bytes = readFileSync(target, "utf8")
+      writeFileSync(target, "USER")
+      utimesSync(target, before.atimeMs / 1000, before.mtimeMs / 1000)
+      const after = lstatSync(target)
+      seen.push({ bytes, sameStat: before.ino === after.ino && before.size === after.size && before.mtimeMs === after.mtimeMs })
+    })
+    try {
+      await runtime.start({ sessionId, workspace, sessionDir: join(root, "session"), native: { provider: "deepseek", model: "deepseek-flash" } })
+      runtime.write(sessionId, "改写 target 文件")
+      await runtime.waitForIdle(sessionId)
+      expect(calls).toBeGreaterThanOrEqual(2)
+      expect(seen).toEqual([{ bytes: "AGNT", sameStat: true }])
+      expect(readFileSync(target, "utf8")).toBe("USER")
+      const q = { 倒数第几句: 1, 文: "改写 target 文件" }
+      expect(await runtime.previewRewind(sessionId, q)).toMatchObject({ restore: [], keep: [{ path: "target.txt", reason: "changed_after" }] })
+      const result = await runtime.rewind(sessionId, q, "files", [])
+      expect(result.restored).toEqual([])
+      expect(readFileSync(target, "utf8")).toBe("USER")
+    } finally {
+      await runtime.stop(sessionId)
+      await local.close()
+    }
+  })
+
   it("两句之后回到第二句之前：文件与对话一起退，原文回来", { timeout: 60_000 }, async () => {
     const { runtime, sessionId, 说完, 读 } = await 起一段("both")
     try {

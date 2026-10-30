@@ -5,14 +5,15 @@ export class BotDelivery {
  private suspended=new Set<string>()
  private dirty=new Set<string>()
  resume(owner:string):void{this.suspended.delete(owner)}
- constructor(private readonly opts:{store:BotStore;busy(id:string):boolean;history(id:string):Promise<string>;send(id:string,text:string):Promise<void>}){}
+ constructor(private readonly opts:{store:BotStore;eligible?(id:string):boolean;busy(id:string):boolean;history(id:string):Promise<string>;send(id:string,text:string):Promise<void>}){}
  flush(owner:string):Promise<void>{
   const previous=this.flushing.get(owner);if(previous){this.dirty.add(owner);return previous}
   const work=this.once(owner).finally(()=>{this.flushing.delete(owner);if(this.dirty.delete(owner)&&!this.suspended.has(owner))queueMicrotask(()=>{void this.flush(owner).catch(error=>console.error("[Bot] delivery",error))})});this.flushing.set(owner,work);return work
  }
  private async once(owner:string){
-  if(this.opts.busy(owner))return
+  if(this.opts.eligible?.(owner) === false)return
   const results=this.opts.store.pendingResults(owner);if(!results.length)return
+  if(this.opts.busy(owner))return
   const history=await this.opts.history(owner)
   const missing=results.filter(r=>!history.includes(`[bot-result:${r.resultId}]`))
   for(const r of results)if(!missing.includes(r))this.opts.store.markResultDelivered(r.resultId)

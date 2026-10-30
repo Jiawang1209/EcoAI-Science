@@ -69,23 +69,31 @@ test("长代码滚动时**语言标题与复制操作仍钉在视口上沿**", a
 
   const header = codeBlock.locator('[data-streamdown="code-block-header"]')
   const actions = codeBlock.locator('[data-streamdown="code-block-actions"]')
-  await header.scrollIntoViewIfNeeded()
-  const before = await header.boundingBox()
-  const beforeActions = await actions.boundingBox()
-  const scroll = await header.evaluateHandle((element) => {
-    for (let parent = element.parentElement; parent; parent = parent.parentElement) {
-      const style = getComputedStyle(parent)
-      if (/(auto|scroll)/.test(style.overflowY) && parent.scrollHeight > parent.clientHeight) return parent
-    }
-    throw new Error("找不到对话转录的滚动容器")
+  const scroll = page.locator('.turns > div').first()
+  // 向上滚轮是退出自动贴底的真实用户动作；程序设 scrollTop 不代替这个前提。
+  const viewport = (await scroll.boundingBox())!
+  await page.mouse.move(viewport.x + viewport.width / 2, viewport.y + viewport.height / 2)
+  const atBottom = await scroll.evaluate(el => el.scrollTop)
+  await page.mouse.wheel(0, -240)
+  await expect.poll(() => scroll.evaluate(el => el.scrollTop)).toBeLessThan(atBottom)
+  // 把代码块开头滚过上沿，但仍给后续120px滚动留足代码内容；可见不等于吸顶。
+  await codeBlock.evaluate(el => {
+    const block = el.querySelector('[data-streamdown="code-block"]')!
+    const viewport = el.closest('.turns')!.firstElementChild!
+    viewport.scrollTop += block.getBoundingClientRect().top - viewport.getBoundingClientRect().top + 64
   })
-  await scroll.evaluate((element) => { element.scrollTop += 120 })
-
-  // sticky 的 top 参照是转录滚动视口（它从窗口 y=140 开始），继续滚时标题应停在原位。
-  await expect.poll(async () => Math.abs(((await header.boundingBox())?.y ?? -10) - before!.y)).toBeLessThan(2)
-  const afterActions = await actions.boundingBox()
-  expect(afterActions!.y).toBeGreaterThanOrEqual(0)
-  expect(Math.abs(afterActions!.y - beforeActions!.y)).toBeLessThan(2)
+  await expect.poll(async () => Math.abs((await header.boundingBox())!.y - viewport.y)).toBeLessThan(2)
+  const before = (await header.boundingBox())!
+  const beforeActions = (await actions.boundingBox())!
+  const beforeScroll = await scroll.evaluate(el => el.scrollTop)
+  const blockBottom = await codeBlock.locator('[data-streamdown="code-block"]').evaluate(el => el.getBoundingClientRect().bottom)
+  expect(blockBottom - before.y - before.height).toBeGreaterThan(120)
+  await scroll.evaluate(el => { el.scrollTop += 120 })
+  await expect.poll(async () => Math.abs(await scroll.evaluate(el => el.scrollTop) - beforeScroll - 120)).toBeLessThan(2)
+  await expect.poll(async () => Math.abs((await header.boundingBox())!.y - viewport.y)).toBeLessThan(2)
+  const afterActions = (await actions.boundingBox())!
+  expect(afterActions.y).toBeGreaterThanOrEqual(viewport.y)
+  expect(Math.abs(afterActions.y - beforeActions.y)).toBeLessThan(2)
   await expect(actions.locator("button").first()).toBeVisible()
 })
 

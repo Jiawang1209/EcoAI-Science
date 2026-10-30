@@ -89,7 +89,9 @@ test("新增两项保持RGB、错误纠正、复制与色盘交互，收回时�
     await input.press("Escape")
     await expect(input).toHaveValue("#e7dcf5")
     await page.getByRole("button", { name: `复制${name}颜色值`, exact: true }).click()
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("#e7dcf5")
+    const kind = name === "对话内容" ? "chat" : "settings"
+    await expect(page.locator(`[data-color-setting="${kind}"] .background-tip`)).toHaveText("已复制")
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("#e7dcf5")
     await page.getByRole("button", { name: `${name}色盘`, exact: true }).click()
     const panel = page.getByRole("dialog", { name: "色盘", exact: true })
     const sv = (await panel.locator(".cpanel-sv").boundingBox())!

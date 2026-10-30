@@ -2224,6 +2224,7 @@ export function createWorkbenchBackend(opts: WorkbenchBackendOptions): Workbench
     try { return await work() } catch(error) { throw fault原样("invalid_request", error instanceof Error ? error.message : String(error), details?.(error)) }
   }
   const botDelivery = opts.bots ? new BotDelivery({
+    eligible: id => typeof (sessions.runtimeOf(id) as NativeRuntime | undefined)?.dispatchBotTask === "function",
     store: opts.bots,
     busy: id => pausedBotOwners.has(id) || !sessions.isLive(id) || botRuntime(id).botBusy(id) || botRuntime(id).botTeamWorking(id),
     history: async id => JSON.stringify(await sessions.history(id)),

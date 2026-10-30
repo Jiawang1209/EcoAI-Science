@@ -95,7 +95,7 @@ First launch introduces EcoAI through four centered cards: welcome, features, AI
 
 ## 从源码运行
 
-需要 Node.js ≥ 22 与 npm。Linux 上部分原生模块还需要编译工具和 Python，详见[打包文档](docs/打包与发布.md)。
+需要 Node.js 22.22.2+（22.x）、24.15.0+（24.x）或 26+ 与 npm。Linux 上部分原生模块还需要编译工具和 Python，详见[打包文档](docs/打包与发布.md)。
 
 ```bash
 git clone https://github.com/Jiawang1209/EcoAI-Science.git

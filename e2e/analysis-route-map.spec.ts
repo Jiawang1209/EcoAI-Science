@@ -6,7 +6,7 @@ import { test, expect, 在项目里开会话 } from './fixtures.js'
 const step={id:'P1',title:'查看已有图表',purpose:'核对已登记的 PDF，未执行科研分析',inputs:[],outputs:[],dependencies:[],status:'pending',blockers:[],cases:[],deliverables:[{path:'figure.pdf'},{path:'figure.png'}],execution:{state:'not_run',note:'仅登记已有文件'},verification:{state:'unreviewed',note:'未审查'},needsReview:false,notes:[]}
 test.describe('route map shared viewer',()=>{
   test.use({dawnOptions:{toolCall:{toolName:'update_analysis_route',args:{expectedRevision:0,route:{title:'已有图表路线',goal:'查看图表',dataContext:[],steps:[step]}},once:true}}})
-  test('PDF preserves usable height, map and draft while closing and reopening dock',async({dawn})=>{
+  test('PDF preserves usable height, map and draft while closing and reopening dock',async({dawn},info)=>{
     const {page}=dawn
     const doc=await PDFDocument.create();const font=await doc.embedFont(StandardFonts.Helvetica)
     doc.addPage([480,440]).drawText('Existing scientific figure',{x:30,y:350,size:20,font})
@@ -26,6 +26,7 @@ test.describe('route map shared viewer',()=>{
     writeFileSync(join(dawn.workspace,'figure.png'),Buffer.from(pngData.split(',')[1]!, 'base64'))
     await expect(pane.getByRole('region',{name:'分析路线图'})).toBeVisible()
     expect((await pane.locator('.visual-preview-stage').boundingBox())!.height).toBeGreaterThan(180)
+    await page.screenshot({path:info.outputPath('route-pdf-usable-height.png'),animations:'disabled'})
     await page.getByRole('button',{name:'关闭面板',exact:true}).click()
     await page.locator('.analysis-route-summary').click()
     await expect(canvas).toHaveAttribute('data-rendered','true')

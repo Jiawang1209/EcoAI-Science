@@ -10,19 +10,19 @@
  * ## 为什么不只跟踪编辑工具（Claude Code 的做法）
  *
  * 科研工作的主路径是 bash 跑脚本、`run_code` 在内核里写文件——只跟踪 write / edit 等于只退了最不要紧的那部分。
- * 所以按**工作区**拍，不按工具拍：这一句第一件工具之前一张（存内容），这一轮收尾一张（只 stat）。
+ * 所以按**工作区**拍，不按工具拍：这一句第一件工具之前一张（存内容），这一轮收尾一张（存内容身份）。
  *
  * ## 三份东西
  *
  * - `snapshots.jsonl`：一行一张快照，只记对上一张的增量（全量 2 万条 × 每轮两张会把盘吃掉）；
  * - `ledger.jsonl`：一串「段」——`turn`（一句）/ `rewind`（一次回退本身）/ `gap`（断档），外加一行 `origin`；
- * - `objects/`：旧版本本体，按 stat 身份起名，不算哈希（不必把 50 MB 的文件读一遍）。
+ * - `objects/`：旧版本本体，按 SHA-256 起名；inode / mtime / 大小相同不代表内容相同。
  *
  * **原始数据目录不存、不碰**：判据只有 `在原始数据里()`，目录名只从 `science-layout.ts` 取（设计契约扫描）。
  */
-import { randomBytes } from "node:crypto"
-import { appendFileSync, constants, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, type Stats } from "node:fs"
-import { chmod, copyFile, link, lstat, mkdir, realpath, rename, rmdir, unlink } from "node:fs/promises"
+import { createHash, randomBytes } from "node:crypto"
+import { appendFileSync, closeSync, constants, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, renameSync, statSync, writeFileSync, type Stats } from "node:fs"
+import { chmod, copyFile, link, lstat, mkdir, open, realpath, rename, rmdir, unlink } from "node:fs/promises"
 import { dirname, isAbsolute, join, sep } from "node:path"
 import { fsSnapshot, FS_SNAPSHOT_CAP, type FsEntry } from "./fs-facts.js"
 import { 原始数据目录, 方案目录 } from "../policy/science-layout.js"
@@ -38,6 +38,8 @@ export interface 清单条 {
   ino: number
   mtimeMs: number
   size: number
+  /** 缺失表示内容身份未知（旧存档、超上限或读取中变化）；不能据 stat 猜测当前文件可覆盖。 */
+  sha256?: string
   /** 这一版存在 `objects/` 里叫什么。缺 = 这一版没存（只拍了 stat，或被跳过） */
   obj?: string
   /** 存下来时的权限位（只留 0o777），改回去时照设——`chmod +x` 过的脚本退回去还要能跑 */
@@ -45,14 +47,15 @@ export interface 清单条 {
   skip?: 跳过原因
 }
 export type 清单 = Map<string, 清单条>
+type 已验清单条 = 清单条 & { ctimeMs: number; dev: number }
 
 export type 断档原因 = "too_many_files" | "store_error"
 export type 段 =
   | { kind: "turn"; entry: string; start: string; end?: string }
-  | { kind: "rewind"; start: string; end?: string }
+  | { kind: "rewind"; start: string; end?: string; userChanged?: string[] }
   | { kind: "gap"; entry?: string; reason: 断档原因 }
 
-type 账行 = { op: "origin"; leaf: string | null } | { op: "open"; seg: 段 } | { op: "end"; end: string }
+type 账行 = { op: "origin"; leaf: string | null } | { op: "open"; seg: 段 } | { op: "end"; end: string; userChanged?: string[] }
 interface 快照行 {
   id: string
   at: string
@@ -83,8 +86,76 @@ export interface 仅测试选项 {
   插一脚?: (时机: "开始挪" | "换下之后" | "链上之后", path: string) => void | Promise<void>
 }
 
-export const 同一版 = (a: Pick<FsEntry, "ino" | "mtimeMs" | "size"> | undefined, b: Pick<FsEntry, "ino" | "mtimeMs" | "size"> | undefined): boolean =>
+const 同一状态 = (a: FsEntry | undefined, b: FsEntry | undefined): boolean =>
   !!a && !!b && a.ino === b.ino && a.mtimeMs === b.mtimeMs && a.size === b.size
+
+export const 同一版 = (a: 清单条 | undefined, b: 清单条 | undefined): boolean =>
+  同一状态(a, b) && !!a?.sha256 && a.sha256 === b?.sha256 && a.mode === b.mode
+
+/** 未知内容只用来观察元数据变化；绝不用它批准覆盖。 */
+const 快照相同 = (a: 清单条 | undefined, b: 清单条 | undefined): boolean =>
+  a?.sha256 || b?.sha256 ? 同一版(a, b) : 同一状态(a, b)
+
+/**
+ * 从不跟随末级链接的同一描述符分块读取。单文件有硬上限，增长、替换或读取中修改都算未知。
+ * ctime 用于发现本次扫描与读取期间的竞争，不作为跨快照的内容身份。
+ */
+function 同步内容身份(abs: string, limit: number): 已验清单条 | undefined {
+  let fd: number | undefined
+  try {
+    fd = openSync(abs, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0))
+    const before = fstatSync(fd)
+    if (!before.isFile() || before.size > limit) return undefined
+    const hash = createHash("sha256")
+    const buffer = Buffer.allocUnsafe(64 * 1024)
+    let size = 0
+    for (;;) {
+      const n = readSync(fd, buffer, 0, Math.min(buffer.length, limit - size + 1), null)
+      if (n === 0) break
+      size += n
+      if (size > limit) return undefined
+      hash.update(buffer.subarray(0, n))
+    }
+    const after = fstatSync(fd)
+    const path = lstatSync(abs)
+    if (size !== before.size || !path.isFile() || !同一状态(before, after) || !同一状态(after, path)
+      || before.ctimeMs !== after.ctimeMs || after.ctimeMs !== path.ctimeMs || before.mode !== after.mode || before.dev !== path.dev) return undefined
+    return { ino: after.ino, mtimeMs: after.mtimeMs, size, mode: after.mode & 0o777, sha256: hash.digest("hex"), ctimeMs: after.ctimeMs, dev: after.dev }
+  } catch {
+    return undefined
+  } finally {
+    if (fd !== undefined) closeSync(fd)
+  }
+}
+
+/** 大批量扫描和归档校验走异步分块 I/O；同步版本只留给紧邻 rename 的最终检查。 */
+async function 内容身份(abs: string, limit: number): Promise<已验清单条 | undefined> {
+  let file: Awaited<ReturnType<typeof open>> | undefined
+  try {
+    file = await open(abs, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0))
+    const before = await file.stat()
+    if (!before.isFile() || before.size > limit) return undefined
+    const hash = createHash("sha256")
+    const buffer = Buffer.allocUnsafe(64 * 1024)
+    let size = 0
+    for (;;) {
+      const { bytesRead: n } = await file.read(buffer, 0, Math.min(buffer.length, limit - size + 1), null)
+      if (n === 0) break
+      size += n
+      if (size > limit) return undefined
+      hash.update(buffer.subarray(0, n))
+    }
+    const after = await file.stat()
+    const path = await lstat(abs)
+    if (size !== before.size || !path.isFile() || !同一状态(before, after) || !同一状态(after, path)
+      || before.ctimeMs !== after.ctimeMs || after.ctimeMs !== path.ctimeMs || before.mode !== after.mode || before.dev !== path.dev) return undefined
+    return { ino: after.ino, mtimeMs: after.mtimeMs, size, mode: after.mode & 0o777, sha256: hash.digest("hex"), ctimeMs: after.ctimeMs, dev: after.dev }
+  } catch {
+    return undefined
+  } finally {
+    await file?.close()
+  }
+}
 
 /** **唯一的判据**。`p` 是相对工作区的 posix 路径（`fsSnapshot` 给的就是这种） */
 export const 在原始数据里 = (p: string): boolean => p === 原始数据目录 || p.startsWith(`${原始数据目录}/`)
@@ -97,9 +168,9 @@ export const 在原始数据里 = (p: string): boolean => p === 原始数据目�
  */
 export const 在方案目录里 = (p: string): boolean => p === 方案目录 || p.startsWith(`${方案目录}/`)
 
-const 对象名 = (e: Pick<FsEntry, "ino" | "mtimeMs" | "size">) => `${e.size}-${e.ino}-${String(e.mtimeMs).replace(".", "_")}`
+const 对象名 = (sha256: string) => `sha256-${sha256}`
 /** `对象名()` 起出来的只会是这个样子；别的（被人改过的存档）不认——`../x` 会读到存档外面去 */
-const 对象名合法 = (n: unknown): n is string => typeof n === "string" && /^\d+-\d+-[\d_e+-]+$/.test(n)
+const 对象名合法 = (n: unknown): n is string => typeof n === "string" && /^(?:sha256-[a-f0-9]{64}|\d+-\d+-[\d_e+-]+)$/.test(n)
 
 /**
  * 存档里的路径只可能是 `fsSnapshot` 给的相对 posix 路径（2026-09-27）。带 `..`、绝对路径、NUL 的，
@@ -127,7 +198,7 @@ function 套(旧: 清单, 行: 快照行): 清单 {
 
 /** 这一行里**真变了**的路径：只多了 `obj`（这一版补存上了）不算变 */
 function 变了(旧: 清单, 新: 清单, 行: 快照行): string[] {
-  return [...Object.keys(行.set).filter((p) => !同一版(旧.get(p), 新.get(p))), ...行.del]
+  return [...Object.keys(行.set).filter((p) => !快照相同(旧.get(p), 新.get(p))), ...行.del]
 }
 
 export interface 回退计划 {
@@ -152,8 +223,7 @@ export interface 回退结果 {
   cannot: 回退计划["cannot"]
   failed: { path: string; message: string }[]
   /**
-   * 换下之后原处又冒出来、被一起挪进废纸篓的那几份（2026-09-27 复审：原先只写进 `manifest.json`，界面列不出来）。
-   * 一个都没有就没有这个键。
+   * 兼容旧结果：过去会把换下之后新出现的文件也挪进废纸篓。现在保留新文件原位、报告冲突，不再产生此字段。
    */
   appeared?: { path: string; to: string }[]
   /** 挪走的、换下来的放在哪儿（相对工作区，posix）。一个都没挪就没有 */
@@ -168,7 +238,9 @@ export class 回退不了 extends Error {
   }
 }
 
-type 内部计划 = { ok: false; reason: 文件回退不了 } | { ok: true; 公开: 回退计划; 恢复: { path: string; obj: string; mode: number | undefined }[] }
+type 待恢复 = { path: string; obj: string; sha256: string; size: number; mode: number | undefined }
+type 预期内容 = { sha256: string; mode: number | undefined }
+type 内部计划 = { ok: false; reason: 文件回退不了 } | { ok: true; 公开: 回退计划; 恢复: 待恢复[]; 此刻: 清单; 保护: Set<string> }
 const 空计划 = (): 回退计划 => ({ restore: [], remove: [], keep: [], cannot: [] })
 const 说 = (e: unknown) => (e instanceof Error ? e.message : String(e))
 const 码 = (e: unknown) => (e as NodeJS.ErrnoException | undefined)?.code
@@ -271,7 +343,7 @@ export class 检查点存档 {
 
   /** 测试与诊断用：段的副本 */
   段落(): 段[] {
-    return this.段们.map((s) => ({ ...s }))
+    return this.段们.map((s) => ({ ...s, ...(s.kind === "rewind" && s.userChanged ? { userChanged: [...s.userChanged] } : {}) }))
   }
 
   /**
@@ -294,7 +366,7 @@ export class 检查点存档 {
     })
   }
 
-  /** 这一轮收尾：只拍 stat。之后你再改的，下一次回退据此认成「你后来改过」 */
+  /** 这一轮收尾：记录内容身份，不复制版本。之后你再改的，下一次回退据此认成「你后来改过」 */
   收尾(): Promise<void> {
     return this.排(async () => {
       const 末 = this.段们.at(-1)
@@ -313,13 +385,13 @@ export class 检查点存档 {
   /** 回到第 N 句之前，文件这一半会怎样。只读（扫一遍此刻） */
   计划(q: 计划问): Promise<计划结果> {
     return this.排(async () => {
-      const r = this.算计划(q)
+      const r = await this.算计划(q)
       return r.ok ? { ok: true as const, ...r.公开 } : r
     })
   }
 
   /**
-   * 照计划做。**先拍一张 stat、记一段 `rewind`，做完再拍一张收尾**——回退本身算「我们的」，下一次往前退时不当成你改的。
+   * 照计划做。**先拍内容身份、记一段 `rewind`，做完再拍一张收尾**——回退本身算「我们的」，下一次往前退时不当成你改的。
    * 改回去的顺序：旧版本先拷到旁边的临时名、设回权限，再把现在那份挪进废纸篓，最后「不覆盖地」就位——中途失败，现在那份不丢。
    *
    * 数据安全（2026-09-27 审查复现过的几条，挪的是你的科研文件）：
@@ -332,12 +404,15 @@ export class 检查点存档 {
    */
   回退(q: 计划问): Promise<回退结果> {
     return this.排(async () => {
-      const r = this.算计划(q)
+      const r = await this.算计划(q)
       if (!r.ok) throw new 回退不了(r.reason)
       const 结果: 回退结果 = { restored: [], removed: [], keep: r.公开.keep, cannot: r.公开.cannot, failed: [] }
-      if (r.公开.remove.length === 0 && r.恢复.length === 0) return 结果
+      if (r.公开.remove.length === 0 && r.恢复.length === 0 && r.保护.size === 0) return 结果
       const 开 = await this.拍(false)
       if (!开) throw new 回退不了("too_many_files")
+      const 回退前 = this.最新!.清单
+      const 自己的 = new Map<string, 预期内容 | undefined>()
+      const 保护过 = new Set(r.保护)
       this.收上一段(开)
       this.记({ op: "open", seg: { kind: "rewind", start: 开 } })
       // 从这里起文件开始动：之后无论出什么事都要走到 finally 把这一段收住、把结果交回去
@@ -345,6 +420,8 @@ export class 检查点存档 {
       let 篓相对: string | undefined
       let 手上 = ""
       try {
+        // 目录归属不能由文件快照证明：即使这一回只保留目录，也持久记下用户归属。
+        if (r.公开.remove.length === 0 && r.恢复.length === 0) return 结果
         const 根实 = await realpath(this.workspace)
         const 时刻 = this.此刻()
         let 篓: { 相对: string }
@@ -369,29 +446,34 @@ export class 检查点存档 {
 
         /**
          * 把 p 挪进废纸篓。那里本来就没有 → undefined；不是普通文件 → 不碰（抛 `不碰`）。
-         * 例外（2026-09-27 复审）：要改回去的文件，原处现在是个**空目录**——快照里那儿是文件，所以这个目录是后来才有的。
-         * 目录从不进废纸篓；`rmdir` 不递归，里面有东西就失败，照旧当「不碰」。收掉了记在 `收掉的空目录` 里，改回失败时建回来。
+         * 文件快照不能证明当前目录的归属；空目录也保留，不为恢复文件而删除目录。
          */
-        const 挪走 = async (p: string, why: 挪动缘由, 收掉的空目录?: string[]): Promise<string | undefined> => {
+        const 挪走 = async (p: string, why: 挪动缘由): Promise<string | undefined> => {
           const 源 = await this.落点(根实, p, false)
           const st = await 看(源)
-          if (!st) return undefined
-          if (st.isDirectory() && 收掉的空目录) {
-            const 收了 = await rmdir(源).then(
-              () => true,
-              () => false,
-            )
-            if (收了) {
-              收掉的空目录.push(源)
-              return undefined
+          if (!st) {
+            if (why === "replaced" && r.此刻.has(p)) {
+              保护过.add(p)
+              throw new 不碰("计划之后文件已删除，保留删除状态，没动它")
             }
+            return undefined
           }
-          if (!st.isFile()) throw new 不碰(`现在那里是${种类(st)}，不是普通文件，没动它`)
+          if (!st.isFile()) {
+            保护过.add(p)
+            throw new 不碰(`现在那里是${种类(st)}，不是普通文件，没动它`)
+          }
           let 篓里 = `${篓.相对}/${p}`
-          // 同一件挪两次（换下来的那份 + 半路冒出来的那份）：各留各的，不互相顶掉
+          // 名字若已被占用，各留各的，不互相顶掉。
           for (let k = 2; await 看(join(this.workspace, 篓里)); k++) 篓里 = `${篓.相对}/${p}~${k}`
           const 到 = await this.落点(根实, 篓里, true)
-          await rename(源, 到)
+          // 所有异步准备之后再验内容，验证与挪动之间不让出 JS 执行权。
+          // 未知身份（含旧存档）不能授权挪动；同 inode/mtime/size 的新内容也不能挪。
+          const 预期 = r.此刻.get(p)
+          if (!预期?.sha256 || !同一版(预期, 同步内容身份(源, 预期.size))) {
+            保护过.add(p)
+            throw new 不碰("计划之后内容已变化或无法确认，没动它")
+          }
+          renameSync(源, 到)
           用过篓 = true
           清单.moved.push({ path: p, to: 篓里, why })
           写清单()
@@ -402,7 +484,10 @@ export class 检查点存档 {
         for (const p of r.公开.remove) {
           手上 = p
           try {
-            if (await 挪走(p, "not_there_before")) 结果.removed.push(p)
+            if (await 挪走(p, "not_there_before")) {
+              结果.removed.push(p)
+              自己的.set(p, undefined)
+            }
           } catch (e) {
             结果.failed.push({ path: p, message: 说(e) })
           }
@@ -413,7 +498,6 @@ export class 检查点存档 {
           let 换下: string | undefined
           let 到: string | undefined
           const 建了: string[] = []
-          const 收掉的空目录: string[] = []
           const 临时名 = `${x.path}.dawn-rewind-${randomBytes(4).toString("hex")}.tmp`
           /** 临时名删不掉：它留在工作区里（就位成功时还和那份硬链着），进 `failed` 让你看得见、能手删（2026-09-27 复审） */
           const 留下临时 = (e: unknown) =>
@@ -423,25 +507,21 @@ export class 检查点存档 {
             if (!对象名合法(x.obj)) throw new 不碰("存档里这一版的名字不对（存档被改过？），没动它")
             到 = await this.落点(根实, x.path, true, 建了)
             临时 = join(this.workspace, 临时名)
+            if ((await 内容身份(join(this.对象, x.obj), x.size))?.sha256 !== x.sha256) throw new 不碰("存档对象内容不符，没动它")
             // EXCL：临时名撞上已有的东西就失败，不覆盖
             await copyFile(join(this.对象, x.obj), 临时, constants.COPYFILE_EXCL | constants.COPYFILE_FICLONE)
+            if ((await 内容身份(临时, x.size))?.sha256 !== x.sha256) throw new 不碰("存档对象内容不符，没动它")
             if (x.mode !== undefined) await chmod(临时, x.mode)
-            换下 = await 挪走(x.path, "replaced", 收掉的空目录)
+            换下 = await 挪走(x.path, "replaced")
             await this.选项.插一脚?.("换下之后", x.path)
-            let 删不掉: unknown
-            try {
-              删不掉 = await 不覆盖地放(临时, 到, 链上之后)
-            } catch (e) {
-              if (码(e) !== "EEXIST") throw e
-              // 换下之后原处又冒出一个（别的进程刚写的）：它也先进废纸篓，再试一次；还不行就算了
-              const 篓里 = await 挪走(x.path, "appeared_during_rewind")
-              if (篓里) (结果.appeared ??= []).push({ path: x.path, to: 篓里 })
-              删不掉 = await 不覆盖地放(临时, 到, 链上之后)
-            }
+            // 新出现的文件属于后来写入者：EEXIST 时停下，绝不为了完成回退再把它挪走。
+            const 删不掉 = await 不覆盖地放(临时, 到, 链上之后)
             临时 = undefined
             结果.restored.push(x.path)
+            自己的.set(x.path, { sha256: x.sha256, mode: x.mode })
             if (删不掉) 留下临时(删不掉)
           } catch (e) {
+            if (码(e) === "EEXIST") 保护过.add(x.path)
             // ENOENT：临时名压根没拷出来（旧版本那份没了之类），不算留下
             if (临时) await unlink(临时).catch((e2: unknown) => void (码(e2) !== "ENOENT" && 留下临时(e2)))
             let message = 说(e)
@@ -456,8 +536,6 @@ export class 检查点存档 {
                 message += `；现在那份在 ${换下}`
               }
             }
-            // 原处那个空目录是为了放文件才收掉的：没放成就建回来，别让你的东西少一样
-            for (const d of 收掉的空目录) await mkdir(d).catch(() => {})
             // 这次为它建的父目录：由里往外收掉（不递归，里面有东西就失败、留着）；原先就在的一个都不碰
             for (const d of [...建了].reverse()) await rmdir(d).catch(() => {})
             结果.failed.push({ path: x.path, message })
@@ -474,17 +552,29 @@ export class 检查点存档 {
         // 没料到的错：停在这里，已做的照样交代
         结果.failed.push({ path: 手上, message: `回退中途出错，停在这里：${说(e)}` })
       } finally {
-        await this.收回退段()
+        await this.收回退段(回退前, 自己的, 保护过)
       }
       return 用过篓 && 篓相对 ? { ...结果, trash: 篓相对 } : 结果
     })
   }
 
   /** 回退做完（或做到一半出了事）：拍一张收尾。拍不上就记断档——不然这一段一直开着，你之后改的会被当成回退改的 */
-  private async 收回退段(): Promise<void> {
+  private async 收回退段(之前: 清单, 自己的: Map<string, 预期内容 | undefined>, 保护过: Set<string>): Promise<void> {
     try {
       const 收 = await this.拍(false)
-      if (收) this.记({ op: "end", end: 收 })
+      if (收) {
+        // 回退窗口中只有我们实际完成、且结束时内容仍吻合的更改归我们。
+        // 冲突处与别的并发编辑持久记为用户修改，下一次回退（包括重开）也不能覆盖。
+        const 之后 = this.最新!.清单
+        for (const p of new Set([...之前.keys(), ...之后.keys()])) {
+          if (快照相同(之前.get(p), 之后.get(p))) continue
+          const 预期 = 自己的.get(p)
+          const 现 = 之后.get(p)
+          const 仍存在 = !预期 && 自己的.has(p) ? !!await 看(join(this.workspace, p)) : !!现
+          if (!自己的.has(p) || (预期 ? !现?.sha256 || 现.sha256 !== 预期.sha256 || 现.mode !== 预期.mode : 仍存在)) 保护过.add(p)
+        }
+        this.记({ op: "end", end: 收, ...(保护过.size ? { userChanged: [...保护过].sort() } : {}) })
+      }
       else this.记不丢({ op: "open", seg: { kind: "gap", reason: "too_many_files" } })
     } catch (e) {
       this.喊一次("store_error", `回退之后没拍上收尾（${说(e)}）：再往前的回退会说「断档」。`)
@@ -550,7 +640,7 @@ export class 检查点存档 {
     return join(this.workspace, p)
   }
 
-  private 算计划(q: 计划问): 内部计划 {
+  private async 算计划(q: 计划问): Promise<内部计划> {
     if (q.在存档之前) return { ok: false, reason: "before_archive" }
     const 候选 = new Set(q.之后的用户)
     const i = this.段们.findIndex((s) => s.kind === "turn" && 候选.has(s.entry))
@@ -558,12 +648,13 @@ export class 检查点存档 {
       (s, k) => s.kind === "gap" && ((s.entry !== undefined && 候选.has(s.entry)) || (i >= 0 && k > i)),
     )
     if (断) return { ok: false, reason: "gap" }
-    if (i < 0) return { ok: true, 公开: 空计划(), 恢复: [] }
+    if (i < 0) return { ok: true, 公开: 空计划(), 恢复: [], 此刻: new Map(), 保护: new Set() }
     const S = (this.段们[i] as Extract<段, { kind: "turn" }>).start
-    const 此刻 = fsSnapshot(this.workspace, this.选项.cap ?? FS_SNAPSHOT_CAP)
+    const 此刻 = await this.扫内容()
     if (!此刻) return { ok: false, reason: "too_many_files" }
 
-    const 我们的 = new Set(this.段们.flatMap((s) => (s.kind !== "gap" && s.end ? [`${s.start}>${s.end}`] : [])))
+    const 我们的 = new Map(this.段们.flatMap((s) => (s.kind !== "gap" && s.end
+      ? [[`${s.start}>${s.end}`, new Set(s.kind === "rewind" ? s.userChanged : [])] as const] : [])))
     const P = new Set<string>()
     const 你的 = new Set<string>()
     let 清: 清单 = new Map()
@@ -572,7 +663,11 @@ export class 检查点存档 {
     for (const 行 of this.读快照()) {
       const 旧 = 清
       清 = 套(清, 行)
-      if (S清) for (const p of 变了(旧, 清, 行)) (我们的.has(`${前}>${行.id}`) ? P : 你的).add(p)
+      if (S清) {
+        const 保护 = 我们的.get(`${前}>${行.id}`)
+        for (const p of 保护 ?? []) 你的.add(p)
+        for (const p of 变了(旧, 清, 行)) (保护 && !保护.has(p) ? P : 你的).add(p)
+      }
       if (行.id === S) S清 = 清
       前 = 行.id
     }
@@ -586,32 +681,44 @@ export class 检查点存档 {
     for (const p of new Set([...清.keys(), ...此刻.keys()])) if (!同一版(清.get(p), 此刻.get(p))) (末开着 ? P : 你的).add(p)
 
     const 公开 = 空计划()
-    const 恢复: { path: string; obj: string; mode: number | undefined }[] = []
+    const 恢复: 待恢复[] = []
+    const 保护 = new Set<string>()
     for (const p of [...P].sort()) {
       if (在方案目录里(p)) continue
       if (在原始数据里(p)) {
         公开.cannot.push({ path: p, reason: "raw_data" })
         continue
       }
-      if (你的.has(p)) {
+      const 旧版 = S清.get(p)
+      const 现 = 此刻.get(p)
+      if (旧版?.skip) {
+        公开.cannot.push({ path: p, reason: 旧版.skip, size: 旧版.size })
+        continue
+      }
+      if (!现) {
+        try {
+          if ((await 看(join(this.workspace, p)))?.isDirectory()) 保护.add(p)
+        } catch {
+          // 缺失或不可访问不等于目录；真正恢复时仍由落点与内容检查把关。
+        }
+      }
+      if (你的.has(p) || 保护.has(p) || (现 && !现.sha256)) {
         公开.keep.push({ path: p, reason: "changed_after" })
         continue
       }
-      const 旧版 = S清.get(p)
-      const 现 = 此刻.get(p)
       if (!旧版) {
         if (现) 公开.remove.push(p)
         continue
       }
       if (同一版(旧版, 现)) continue
-      if (旧版.obj) {
+      if (旧版.obj && 旧版.sha256) {
         公开.restore.push(p)
-        恢复.push({ path: p, obj: 旧版.obj, mode: 旧版.mode })
+        恢复.push({ path: p, obj: 旧版.obj, sha256: 旧版.sha256, size: 旧版.size, mode: 旧版.mode })
         continue
       }
       公开.cannot.push({ path: p, reason: 旧版.skip ?? "not_stored", size: 旧版.size })
     }
-    return { ok: true, 公开, 恢复 }
+    return { ok: true, 公开, 恢复, 此刻, 保护 }
   }
 
   private 排<T>(f: () => Promise<T>): Promise<T> {
@@ -643,7 +750,10 @@ export class 检查点存档 {
     else if (行.op === "open") this.段们.push({ ...行.seg })
     else {
       const 末 = this.段们.at(-1)
-      if (末 && 末.kind !== "gap" && !末.end) 末.end = 行.end
+      if (末 && 末.kind !== "gap" && !末.end) {
+        末.end = 行.end
+        if (末.kind === "rewind" && Array.isArray(行.userChanged)) 末.userChanged = 行.userChanged.filter(路径合法)
+      }
     }
   }
 
@@ -711,10 +821,49 @@ export class 检查点存档 {
     return this.选项.now?.() ?? new Date()
   }
 
+  /**
+   * 内容读取仅用于回退，不改变普通产物探针。每文件最多 50 MB（或更小的配置上限），
+   * 每张快照最多读 2 GB；原始数据和批准方案不读。超过预算、读不了或读中变化的身份明确未知。
+   */
+  private async 扫内容(): Promise<清单 | undefined> {
+    const 扫到 = fsSnapshot(this.workspace, this.选项.cap ?? FS_SNAPSHOT_CAP)
+    if (!扫到) return undefined
+    const 清: 清单 = new Map()
+    const 单个 = Math.min(this.选项.单个上限 ?? 单个文件上限, 单个文件上限)
+    // 必须在第一次 await 之前一次性抓完初始事实。否则读取前面的文件时，
+    // 用户修改后面的文件并恢复 mtime/大小，会被错认成这一轮结尾的 agent 内容。
+    const 初始 = new Map<string, Stats>()
+    for (const [p, e] of 扫到) {
+      if (在方案目录里(p) || 在原始数据里(p) || e.size > 单个) continue
+      try {
+        const st = lstatSync(join(this.workspace, p))
+        if (st.isFile() && 同一状态(st, e)) 初始.set(p, st)
+      } catch {
+        // 初始事实取不到：这一版的内容身份未知，不能事后补认。
+      }
+    }
+    let 剩余 = 存档总上限
+    for (const [p, e] of 扫到) {
+      if (在方案目录里(p)) continue
+      let 条: 清单条 = e
+      const 起 = 初始.get(p)
+      if (起 && e.size <= 剩余) {
+        剩余 -= e.size
+        const 身份 = await 内容身份(join(this.workspace, p), Math.min(单个, e.size))
+        if (身份 && 同一状态(e, 身份) && 身份.ctimeMs === 起.ctimeMs && 身份.dev === 起.dev && 身份.mode === (起.mode & 0o777)) {
+          const { ctimeMs: _ctime, dev: _dev, ...版本 } = 身份
+          条 = 版本
+        }
+      }
+      清.set(p, 条)
+    }
+    return 清
+  }
+
   /** 扫一遍，记一张增量快照；`拷` 时把没存过的这一版存下来。扫不动（超上限）返回 undefined */
   private async 拍(拷: boolean): Promise<string | undefined> {
     const cap = this.选项.cap ?? FS_SNAPSHOT_CAP
-    const 扫到 = fsSnapshot(this.workspace, cap)
+    const 扫到 = await this.扫内容()
     if (!扫到) {
       this.喊一次("too_many_files", `工作区超过 ${cap} 个文件，没法存档：这之后动的文件回退不了（对话还能撤）。`)
       return undefined
@@ -724,7 +873,7 @@ export class 检查点存档 {
     const set: Record<string, 清单条> = {}
     for (const [p, e] of 扫到) {
       const was = 旧.get(p)
-      let 条: 清单条 = was && 同一版(was, e) ? was : { ino: e.ino, mtimeMs: e.mtimeMs, size: e.size }
+      let 条: 清单条 = was && 快照相同(was, e) ? was : { ...e }
       if (拷 && 条.obj === undefined && 条.skip === undefined) 条 = await this.存(p, 条)
       新.set(p, 条)
       if (条 !== was) set[p] = 条
@@ -750,11 +899,16 @@ export class 检查点存档 {
     } catch {
       return 条
     }
-    if (!st.isFile() || !同一版(st, 条)) return 条
-    const 名 = 对象名(条)
+    if (!st.isFile() || !同一状态(st, 条) || !条.sha256) return 条
+    const 名 = 对象名(条.sha256)
     const 到 = join(this.对象, 名)
     const mode = st.mode & 0o777
-    if (existsSync(到)) return { ...条, obj: 名, mode }
+    // objects 被换成了链接（会话目录被动过）：读取已有对象也不能跟进去。
+    if (lstatSync(this.对象).isSymbolicLink()) throw new Error("回退存档的 objects 目录是符号链接，不往里写")
+    if (existsSync(到)) {
+      if ((await 内容身份(到, 条.size))?.sha256 !== 条.sha256) throw new Error("回退存档对象内容不符，没复用它")
+      return { ...条, obj: 名, mode }
+    }
     const 总 = this.选项.总上限 ?? 存档总上限
     if (this.字节 + 条.size > 总) {
       this.喊一次(
@@ -763,16 +917,17 @@ export class 检查点存档 {
       )
       return { ...条, skip: "over_budget" }
     }
-    // objects 被换成了链接（会话目录被动过）：不往那里写
-    if (lstatSync(this.对象).isSymbolicLink()) throw new Error("回退存档的 objects 目录是符号链接，不往里写")
-    await copyFile(源, `${到}.tmp`, constants.COPYFILE_FICLONE)
-    // 拷的途中它又被改了：这份不对版，不留
-    if (!同一版(await lstat(源), 条)) {
-      await unlink(`${到}.tmp`).catch(() => {})
-      return 条
+    const 临时 = `${到}.${randomBytes(4).toString("hex")}.tmp`
+    try {
+      await copyFile(源, 临时, constants.COPYFILE_EXCL | constants.COPYFILE_FICLONE)
+      // 复制品和源都以内容验明：stat 被恢复也不能把别的内容标成这一版。
+      const [拷贝, 现在] = await Promise.all([内容身份(临时, 条.size), 内容身份(源, 条.size)])
+      if (拷贝?.sha256 !== 条.sha256 || !同一版(现在, 条)) return 条
+      await rename(临时, 到)
+      this.字节 += 条.size
+      return { ...条, obj: 名, mode }
+    } finally {
+      await unlink(临时).catch(() => {})
     }
-    await rename(`${到}.tmp`, 到)
-    this.字节 += 条.size
-    return { ...条, obj: 名, mode }
   }
 }

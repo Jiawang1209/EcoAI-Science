@@ -84,7 +84,8 @@ test("背景颜色值支持RGB、错误纠正、复制及独立色盘与吸管",
   await input.press("Escape")
   await expect(input).toHaveValue("#e7dcf5")
   await page.getByRole("button", { name: "复制背景颜色值", exact: true }).click()
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("#e7dcf5")
+  await expect(page.locator('[data-color-setting="background"] .background-tip')).toHaveText("已复制")
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("#e7dcf5")
   await page.getByRole("button", { name: "背景色色盘", exact: true }).click()
   const panel = page.getByRole("dialog", { name: "色盘", exact: true })
   const sv = (await panel.locator(".cpanel-sv").boundingBox())!

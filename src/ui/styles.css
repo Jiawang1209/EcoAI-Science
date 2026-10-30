@@ -8854,8 +8854,18 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--dawn-accent); 
 .composer-controls > .ctx-meter .ctx-meter-pop { right: var(--dawn-space-3); width: min(20rem, calc(100% - var(--dawn-space-6))); }
 .composer-tools > .dock-toggle { flex: 0 0 auto; width: 36px; height: 36px; }
 @container (max-width: 600px) {
-  .composer-footer { flex-wrap: wrap; }
-  .composer-footer .composer-controls { flex-basis: 100%; margin-left: auto; }
+  .composer-footer:not([data-follow-main="one-row"]) { flex-wrap: wrap; }
+  .composer-footer:not([data-follow-main="one-row"]) .composer-controls { flex-basis: 100%; margin-left: auto; }
+}
+/* 侧边输入卡跟随主区实际测得的行数，不能被自身较窄的容器强制多折一行。 */
+.composer-footer[data-follow-main="one-row"] { flex-wrap: nowrap; }
+.composer-footer[data-follow-main="one-row"] .composer-controls { flex-basis: auto; }
+.composer-footer[data-follow-main="two-rows"] { flex-wrap: wrap; }
+.composer-footer[data-follow-main="two-rows"] .composer-controls { flex-basis: 100%; }
+/* 极窄坞优先保留模型与发送的可点击空间，再退回两组分行。 */
+@container (max-width: 440px) {
+  .composer-footer[data-follow-main="one-row"] { flex-wrap: wrap; }
+  .composer-footer[data-follow-main="one-row"] .composer-controls { flex-basis: 100%; }
 }
 /* 时间和消息动作共用一行；与气泡分别定宽，短句不被动作撑宽。 */
 .turn.user .turn-actions { flex-wrap: nowrap; max-width: 100%; gap: var(--dawn-space-1); }
@@ -8984,7 +8994,10 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--dawn-accent); 
 .route-file-preview .visual-preview-stage .preview-img { width:100%; height:100%; max-height:100%; }
 .route-file-preview .pdf-page-controls { flex:0 0 auto; }
 .route-file-error { padding:12px; overflow:auto; }
-.route-file-level .route-overview { max-height:40%; }
+/* 文件预览优先保留正文高度；路线图仍常驻并可在自己的区域滚动。 */
+.route-file-level .route-overview { max-height:32%; }
+.route-file-level :is(.route-map-count, .route-current-position) { margin-block:2px; }
+.route-file-level .route-map-legend { margin-top:4px; }
 .route-file-level .route-map-node { min-height:60px; gap:4px; padding-block:6px; }
 .route-file-level .route-node-number { display:none; }
 
@@ -9384,4 +9397,14 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--dawn-accent); 
 @container (max-width: 520px) {
   .skill-package-preview { grid-template-columns: minmax(0, 1fr); }
   .skill-package-preview nav { max-height: 150px; border-right: 0; border-bottom: 1px solid var(--dawn-stroke-2); }
+}
+
+/* 矮窗口收紧留白，为转录保留可读、可滚动的高度。 */
+@media (max-height: 600px) {
+  .conversation .turns { padding-block: var(--dawn-space-2); }
+  .side-chat .conv-head { padding-block: 0; }
+  .conversation .composer { padding-block: 0; }
+  .conversation .composer-environment { min-height: var(--dawn-space-8); padding-block: 0; }
+  .conversation .composer-card > .composer-box { padding-bottom: 0; }
+  .conversation .composer-footer { padding-block: 0; row-gap: 0; }
 }

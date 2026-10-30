@@ -427,9 +427,9 @@ test("**树行的菜单：复制路径、插进输入框**", async ({ dawn }) =>
   // ② 右键 → 复制绝对路径（工作区 + 相对）
   await 面板.getByRole("button", { name: /^样本\.csv/ }).click({ button: "right" })
   await page.getByRole("menu").getByRole("menuitem", { name: "复制绝对路径" }).click()
-  const 绝对 = await page.evaluate(() => navigator.clipboard.readText())
-  expect(绝对.endsWith("/data/样本.csv")).toBe(true)
-  expect(绝对.startsWith("/")).toBe(true)
+  const 绝对 = join(workspace, "data", "样本.csv")
+  await expect(面板.locator(".files-row-note")).toHaveText(`已复制绝对路径：${绝对}`)
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(绝对)
 
   // ③ 目录也有；插进输入框 → 草稿末尾多了 `@data `
   await 面板.getByRole("button", { name: "目录操作：data" }).click()

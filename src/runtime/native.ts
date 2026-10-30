@@ -2959,7 +2959,7 @@ ${描述}`
      */
     let 起跑了!: () => void
     const 起跑 = new Promise<void>((r) => (起跑了 = r))
-    /** 一轮的同步收尾（`inFlight`、`turn_end`、`cost`、存档收尾、`idle`）。先出方案要核对时排在核对之后 */
+    /** 存档完成后的最终收尾。`inFlight` 与最终事件不能提前放下，否则会把用户的新编辑收进 agent 的结尾。 */
     const 收尾 = (): void => {
       s.inFlight -= 1
       /**
@@ -2993,11 +2993,15 @@ ${描述}`
         sessionId,
         cost: { visible: false, reason: "该 provider 只报 token，不报金额；token 用量见上下文栏" },
       })
-      // 回退这一轮：这一轮收尾拍一张结尾（只 stat）。不等它——`开轮` / `回退` 排在同一条链上，自然在它之后（2026-09-27）
-      void this.存档们.get(sessionId)?.收尾()
       // **一整轮真正结束。** 这是唯一可靠的边界——见 AgentEvent.idle 的说明
       this.interruptAnalysisRoute(sessionId, '本轮已结束，步骤仍未交付；请核对当前状态与阻塞原因')
       this.emit({ kind: "idle", sessionId })
+    }
+    const 存档后收尾 = (): void | Promise<void> => {
+      const 存档 = this.存档们.get(sessionId)
+      // 收尾永不 reject；让 pending/finally 包含这张快照，waitForIdle、排队消息与停止都一起等。
+      // 没开存档的会话保留同步收尾时序。
+      return 存档 ? 存档.收尾().then(收尾) : 收尾()
     }
     // 记下这一轮，供 `waitForIdle` 等待。catch 就地挂上，所以它永不 reject
     const run = s.session
@@ -3016,10 +3020,10 @@ ${描述}`
         /**
          * 先出方案（2026-09-28，D3）：这一轮动过已批准的方案就恢复、说出来。**在 `inFlight` 放下之前做完**——
          * 做完之前下一句走排队那条缝（`s.pending` 等的就是这里）：新的一轮若抢在恢复之前拍了底，会把 agent 改坏的那份当成底。
-         * 没有要核对的（绝大多数会话）照旧同步收尾，时序一丝不变。
+         * 核对之后先完成文件存档，再放下运行状态并发最终事件；没有核对与存档的会话照旧同步收尾。
          */
         const 核 = this.收轮核对(sessionId)
-        return 核 ? 核.then(收尾) : 收尾()
+        return 核 ? 核.then(存档后收尾) : 存档后收尾()
       })
     // 串起来而不是覆盖：连发两轮时，等待必须覆盖两轮，不能只等最后一轮
     s.pending = s.pending ? s.pending.then(() => run) : run

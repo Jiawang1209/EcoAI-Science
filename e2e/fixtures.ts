@@ -346,6 +346,8 @@ export interface MockToolCallSpec {
 }
 
 export interface DawnOptions {
+  /** 视觉基线固定软件光栅与 GPU 合成；保留毛玻璃材质。 */
+  stableGpuRendering?: boolean
   /**
    * 额外的环境变量（A2）。**盖不过隔离用的那几条**——见下面 `env` 的注释。
    * 目前用来打开假 ACP agent 的几种行为（问权限、报用量）。
@@ -731,6 +733,7 @@ export const test = base.extend<{ dawnOptions: DawnOptions; dawn: DawnFixture }>
          * 而不是靠调大容差把真实的颜色漂移一起放过去。
          */
         "--force-color-profile=srgb",
+        ...(dawnOptions.stableGpuRendering ? ["--disable-skia-graphite", "--disable-gpu-rasterization"] : []),
       ],
       env: {
         ...process.env,

@@ -1071,7 +1071,7 @@ export function FilesView({
     : 树高
   // 矮窗临时缩小目录，避免最小树高把预览挤出网格；不改写用户拖动偏好。
   const 显示树高 = 可用.height > 0 && 可用.height < FILE_TREE_MIN + 160
-    ? Math.min(期望树高, 可用.height * .4)
+    ? Math.min(期望树高, 可用.height * .4, Math.max(0, 可用.height - 64))
     : 期望树高
   const 显示树宽 = 可用.width > 0 ? clampFileTree(树宽, 可用.width) : 树宽
   return (

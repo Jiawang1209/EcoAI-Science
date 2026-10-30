@@ -162,7 +162,7 @@ test("搜索旁的快捷键速查：分组、只读、退出与命令面板各�
   const a = (await search.boundingBox())!, b = (await trigger.boundingBox())!
   expect(b.x).toBeGreaterThan(a.x + a.width)
   expect(b.x - a.x - a.width).toBeLessThanOrEqual(16)
-  expect(b.height).toBe(a.height)
+  expect(b.height).toBe(32)
   await page.getByPlaceholder(/输入问题/).fill("速查不会发送这段草稿")
   await trigger.click()
   const dialog = page.getByRole("dialog", { name: "快捷键速查", exact: true })
@@ -172,12 +172,12 @@ test("搜索旁的快捷键速查：分组、只读、退出与命令面板各�
   const mac = await page.evaluate(() => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent))
   const mod = mac ? "⌘" : "Ctrl"
   // 现行速查包含当前对话查找；核对具体键位，避免只改总数而漏掉错误内容。
-  await expect(dialog.locator("kbd")).toHaveText([
+  expect(await dialog.locator(".shortcut-keys").evaluateAll(elements => elements.map(el => el.getAttribute("aria-label")))).toEqual([
     `${mod} K`, `${mod} P`, mac ? "⌃ ⇧ G" : "Ctrl Shift G", `${mod} F`,
     "Enter", "Shift Enter", `${mod} Enter`, mac ? "⌘⇧E" : "Ctrl+Shift+E",
     "Esc", "Tab", "↑ ↓", `${mod} Enter`, "Ctrl C",
   ])
-  await expect(dialog.locator(".shortcut-row").filter({ hasText: "查找当前对话" }).locator("kbd")).toHaveText(`${mod} F`)
+  await expect(dialog.locator(".shortcut-row").filter({ hasText: "查找当前对话" }).locator(".shortcut-keys")).toHaveAttribute("aria-label", `${mod} F`)
   await page.keyboard.press("Tab")
   await expect(dialog.getByRole("button")).toBeFocused()
   await page.keyboard.press("Escape")

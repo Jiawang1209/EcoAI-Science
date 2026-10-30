@@ -46,8 +46,10 @@ test('用户与助手公式实际排版，字体本地可用，深浅主题和�
   await page.mouse.move(1180, 20)
   await expect(page.locator('.sess-hover-card')).toHaveCount(0)
   await page.screenshot({ path: info.outputPath('math-light.png'), animations: 'disabled' })
-  await page.getByRole('button', { name: '复制这段回答', exact: true }).last().click()
-  expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(MATH_REPLY)
+  const copyReply = page.getByRole('button', { name: '复制这段回答', exact: true }).last()
+  await copyReply.click()
+  await expect(copyReply.locator('.copied-toast')).toHaveText('已复制')
+  await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText())).toBe(MATH_REPLY)
   await page.locator('main.main').getByRole('button', { name: '导出对话', exact: true }).click()
   await expect(page.locator('.export-toast')).toContainText('已导出')
   const exported = (await page.locator('.export-toast').innerText()).match(/到 (.+\.md)/)?.[1]

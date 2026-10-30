@@ -165,12 +165,17 @@ test("主侧对话输入区在窄栏可操作且不横向溢出", async ({ dawn 
   const side = page.locator("aside.right-dock")
   await side.getByRole("button", { name: "另开一段", exact: true }).click()
   await side.getByPlaceholder(/输入问题/).fill("侧边草稿")
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setSize(1180, 850))
-  for (const width of [480, 280]) {
+  for (const viewportWidth of [1180, 1920]) {
+  await app.evaluate(({ BrowserWindow }, width) => BrowserWindow.getAllWindows()[0]!.setContentSize(width, 850), viewportWidth)
+  for (const width of viewportWidth === 1920 ? [480, 441, 440, 360, 300, 280] : [480, 280]) {
     // 复用已有宽度拖动手柄，真实触发布局。
     const sash = page.getByRole("separator", { name: "调整面板宽度" })
-    await sash.focus()
-    if (width === 280) for (let step = 0; step < 13; step++) await sash.press("ArrowRight")
+    const currentWidth = Number(await sash.getAttribute("aria-valuenow"))
+    const handle = (await sash.boundingBox())!
+    await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(handle.x + handle.width / 2 + currentWidth - width, handle.y + handle.height / 2)
+    await page.mouse.up()
     await expect(sash).toHaveAttribute("aria-valuenow", String(width))
     await checkFit(page.locator("main.main"))
     await checkFit(side)
@@ -213,7 +218,8 @@ test("主侧对话输入区在窄栏可操作且不横向溢出", async ({ dawn 
     expect(permissionBox.x + permissionBox.width).toBeLessThanOrEqual(card.x + card.width + 1)
     await expect(permissions.getByRole("menuitemradio", { name: /完全访问权限/ })).toBeVisible()
     await page.keyboard.press("Escape")
-    await page.screenshot({ path: `${shots}/side-toolbar-${width}.png`, animations: "disabled" })
+    await page.screenshot({ path: `${shots}/side-toolbar-${viewportWidth}-${width}.png`, animations: "disabled" })
+  }
   }
 })
 

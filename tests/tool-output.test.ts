@@ -24,7 +24,7 @@
  * 那是 pi 的职责，我们不越界重做一套。
  */
 import { describe, expect, it } from "vitest"
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { budgetToolResult, TOOL_OUTPUT_BUDGET } from "../src/runtime/tool-output.js"
@@ -112,15 +112,23 @@ describe("长输出：截断 + 写盘 + 出声", () => {
 
 describe("写盘失败不能连累主流程", () => {
   it("目录不可写时仍返回摘要，只是没有路径", () => {
-    // 指向一个不存在且不可创建的位置
-    const r = budgetToolResult("长".repeat(TOOL_OUTPUT_BUDGET), {
-      sessionDir: "/proc/不可能存在的路径/x",
-      toolName: "bash",
-    })
-    expect(r.truncated).toBe(true)
-    expect(r.fullOutputPath).toBeUndefined()
-    // 拿不到全文时更要说清楚，而不是假装什么都没发生
-    expect(r.text).toMatch(/省略/)
+    const d = dir()
+    // 普通文件不可能成为目录；ENOTDIR 在各平台都可重现。
+    // 不用 /proc：Linux 上 recursive mkdirSync 可能卡在虚拟文件系统里。
+    const file = join(d, "file-as-parent")
+    writeFileSync(file, "keep")
+    try {
+      const r = budgetToolResult("长".repeat(TOOL_OUTPUT_BUDGET), {
+        sessionDir: join(file, "session"),
+        toolName: "bash",
+      })
+      expect(r.truncated).toBe(true)
+      expect(r.fullOutputPath).toBeUndefined()
+      expect(r.text).toMatch(/省略/)
+      expect(readFileSync(file, "utf8")).toBe("keep")
+    } finally {
+      rmSync(d, { recursive: true, force: true })
+    }
   })
 })
 
