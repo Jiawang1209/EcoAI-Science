@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { App } from '../../src/ui/App.js'
 import { createClient } from '../../src/ui/client.js'
 import { OPERATIONS, WORKBENCH_PROTOCOL_VERSION, type SessionSummary } from '../../src/protocol/index.js'
-import { $credentialsLoaded, $providersLoaded, $activeSessionId, $dockOpen, $tempSessions, setActiveSessionId, setDockOpen } from '../../src/ui/state/index.js'
+import { $credentialsLoaded, $providersLoaded, $activeSessionId, $dockOpen, $tempSessions, setActiveSessionId, setDockOpen, setCredentials } from '../../src/ui/state/index.js'
 import { 记跳过 } from '../../src/ui/setup-wizard.js'
 
 vi.mock('../../src/ui/terminal.js', () => ({ TerminalPane: () => <div /> }))
@@ -39,13 +39,13 @@ function harness() {
 const empty = { agents: [], providers: [] }
 const oldEmptyCopy = /还没有可用的 agent|配置里还没有可用的 agent|配置文件里没有 agent/
 
-it('启动数据未返回时显示读取状态，不把空名单当作没有 agent', async () => {
+it('启动数据未返回时先显示四步引导，不把空名单当作没有 agent', async () => {
   const h = harness()
   const { container } = render(<App client={h.client} />)
   await waitFor(() => expect(h.calls).toContain('getProviders'))
   expect(container.textContent).not.toMatch(oldEmptyCopy)
-  expect(screen.getByText('正在读取启动配置').closest('[role="status"]')).toBeTruthy()
-  expect(screen.queryByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeNull()
+  expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
+  expect(screen.getByRole('list', { name: '设置进度' }).children).toHaveLength(4)
 })
 
 it.each(['providers', 'credentials'] as const)('两份启动数据均已到手才决定首屏，%s 先返回也不闪旧空态', async first => {
@@ -57,7 +57,7 @@ it.each(['providers', 'credentials'] as const)('两份启动数据均已到手�
     else h.credentials.resolve({ configured: [], encrypted: true })
   })
   expect(container.textContent).not.toMatch(oldEmptyCopy)
-  expect(screen.getByText('正在读取启动配置').closest('[role="status"]')).toBeTruthy()
+  expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
   await act(async () => {
     if (first === 'providers') h.credentials.resolve({ configured: [], encrypted: true })
     else h.providers.resolve(empty)
@@ -104,4 +104,29 @@ it('从已有会话及终端面板重新打开向导，不被当前视图挡住�
   expect($dockOpen.get()).toBe(false)
   expect($tempSessions.get().some(s => s.sessionId === 'existing')).toBe(true)
   expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
+})
+
+
+it.each(['unlocked', 'unreadable'] as const)('已保存但未核验的加密凭证在系统密码框后保持四步引导，核验结果为 %s', async result => {
+  const h = harness()
+  render(<App client={h.client} />)
+  await act(async () => {
+    h.providers.resolve({ agents: [{ agentId: 'chat', kind: 'native', provider: 'deepseek', model: 'deepseek-flash' }], providers: [{ providerId: 'deepseek', models: ['deepseek-flash'] }] })
+    h.credentials.resolve({ configured: ['deepseek'], encrypted: true, verified: false })
+  })
+  expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
+  expect(screen.queryByRole('heading', { name: '今天想分析什么？' })).toBeNull()
+  expect(screen.getByRole('list', { name: '设置进度' }).children).toHaveLength(4)
+  await act(async () => setCredentials(result === 'unlocked'
+    ? { configured: ['deepseek'], encrypted: true, verified: true }
+    : { configured: [], encrypted: false, verified: true, broken: ['deepseek'] }))
+  if (result === 'unlocked') {
+    expect(screen.getByRole('heading', { name: '今天想分析什么？' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeNull()
+  } else {
+    expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '下一页' }))
+    fireEvent.click(screen.getByRole('button', { name: '下一页' }))
+    expect(screen.getByText(/上一版保存的 key 解不开了/)).toBeTruthy()
+  }
 })

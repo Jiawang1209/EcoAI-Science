@@ -1088,8 +1088,10 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
    * （e2e 抓的：第 ② 段解释器还没来得及选，屏幕就换了）。
    */
   const [向导中, 设向导中] = useState(false)
-  // 当次渲染就决定首屏，不能等 effect 再把旧空态替换掉。
-  const 显示向导 = !跳过向导 && (向导中 || 没有钥匙)
+  // 首帧先画引导，钥匙串的同步系统密码框出现时不能把工作台留在背后。
+  // configured 在核验前只是存盘提示，verified:false 不能视为已经可用。
+  const 启动待核验 = !目录到手 || !凭证到手 || creds.verified === false
+  const 显示向导 = !跳过向导 && (向导中 || 启动待核验 || 没有钥匙)
   const 打开配置向导 = () => {
     设向导起点("welcome"); 设向导中(true)
     记跳过(false); 设跳过向导(false)
@@ -5761,14 +5763,12 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                 currentKernels={对话内核}
               />
             </>
-          ) : !目录到手 || !凭证到手 ? (
-            <div className="conversation empty-conv"><Loader label={t("正在读取启动配置")} /></div>
           ) : 显示向导 ? (
             <SetupWizard
               key={向导起点}
               initialStep={向导起点}
               providers={knownProviders.providers}
-              configured={creds.configured}
+              configured={creds.verified === false ? [] : creds.configured}
               modelCatalog={knownProviders.models}
               endpointDefaults={knownProviders.endpointDefaults}
               connections={knownProviders.connections}
@@ -5808,6 +5808,8 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
                 设向导中(false)
               }}
             />
+          ) : !目录到手 || !凭证到手 ? (
+            <div className="conversation empty-conv"><Loader label={t("正在读取启动配置")} /></div>
           ) : (
             <EmptyConversation
               agents={agentIds}
