@@ -141,6 +141,31 @@ describe("握手：就绪之前不许发出去", () => {
  * **一条都没有**。用户看到的是「第一次运行代码没有输出，胶囊一直转」。
  */
 describe("握手：iopub 也要自己出过一声", () => {
+  it("重问生成新消息身份，并接受重问回复且只发送一次排队执行", async () => {
+    vi.useFakeTimers()
+    const m = make()
+    const ready = m.ch.ready()
+    void ready.catch(() => {})
+    try {
+      const execution = msg("execute_request")
+      m.ch.send(execution)
+      await vi.advanceTimersByTimeAsync(600)
+      const probes = m.f.sent.filter(x => x.header.msg_type === "kernel_info_request")
+      expect(probes.length).toBeGreaterThan(1)
+      expect(new Set(probes.map(x => x.header.msg_id)).size).toBe(probes.length)
+      expect(m.f.sent).not.toContain(execution)
+      const retry = probes.at(-1)!
+      m.f.incoming(msg("kernel_info_reply", retry.header.msg_id))
+      m.f.incoming(msg("status", retry.header.msg_id))
+      await ready
+      expect(m.f.sent.filter(x => x.header.msg_id === execution.header.msg_id)).toHaveLength(1)
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(m.f.sent.filter(x => x.header.msg_type === "kernel_info_request")).toHaveLength(probes.length)
+    } finally {
+      await m.ch.close()
+      vi.useRealTimers()
+    }
+  })
   it("**只回 kernel_info_reply 不算就绪** —— 那一刻发出去的执行，输出会被 ZMQ 静默丢掉", async () => {
     const m = make()
     let 就绪 = false

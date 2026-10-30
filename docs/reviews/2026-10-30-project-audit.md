@@ -1,5 +1,7 @@
 # EcoAI Science 0.0.5 项目代码与依赖审计
 
+> 本地集成更新：首批修复已提交为 `025321b5` 并快进合并到本地 main；合并后复验还补修了 PTY 测试同步、内核握手消息重放、明确的启动端口冲突与真实内核测试隔离。下表保留首批整轮验收，追加修复的最新验证见文末。没有推送。
+
 审计基线：`9dc1222fd59f4a66b0096f9b058489cea76d500c`，`main`。日期：2026-10-30（Asia/Shanghai）。
 
 **最终验收日期：2026-10-31。已修复本次复现的凭证、文件回退、运行时收尾、更新并发、布局、脚本和依赖问题。最终完整入口 `npm run test:e2e` 退出码为 0。Linux CI 的代码调整仍需真实 runner 复验，不能据 macOS 结果宣称远端 CI 已通过。**
@@ -269,3 +271,32 @@ Native 边界补查前的完整 Vitest：553 文件全部通过，5817 通过、
 测试自动覆盖的四张 `artifacts/case-cards/`、`artifacts/research-guide/` PNG 已备份到临时证据目录并恢复 Git 原图；14 张经过逐图审查的 macOS 视觉基线作为有意修复保留。最终验收记录完成时，源分支未提交、未推送，原始 HEAD 未改变。根项目使用独立 node_modules，未改动 DAWN 项目的依赖目录、已安装应用或用户网络配置。
 
 边界：旧检查点缺少可靠内容身份时保守保留文件；文件内容校验会增加 I/O，批量读取已改为异步。沿用原设计关于运行中写入、后台写手及不支持硬链接文件系统的竞争边界，不能把这些本机验证扩大为所有操作系统和所有并发写入下的形式化保证。
+
+
+## 本地提交合并的追加修复与验证（2026-10-31）
+
+用户明确授权提交并合并到本地 main，禁止推送。首批修复提交为 `025321b5`，由 `9dc1222f` 快进合并；之后的本地复验出现新证据，补充处理后再合并。保留修复分支用于追溯。
+
+追加问题与处理：
+
+- PTY 用例只等待 `$`/`>>>`/`>`，会误认发送前已存在的提示符。真实失败为 currentDirectory 的空闲保护拒绝；延迟交付的本机探针还确认旧等待条件可能读到启动目录。现等待本次命令的独立完整输出行及就绪提示符，覆盖 Shell、Python 和 R；四条用例连续五轮全部通过。
+- 内核握手重问重复发送同一消息，Python 实际报 Duplicate Signature。本机 jupyter_client 源码也明确对重复摘要拒绝。重问现生成全新消息身份，接受同一握手各次请求的正确回复，维持分析请求只发送一次；回归先失败（3 次请求只有 1 个身份），修复后通过。
+- 随后独立富输出组拿到明确证据：Python 在 `tcp://127.0.0.1:9002` 绑定失败，报告 Address already in use。启动时探测空闲端口与子进程真正绑定之间有外部进程竞争窗口。现仅针对明确的 Python/R 绑定冲突，在关闭失败进程及通道后，以新连接最多尝试三次；输出 PID/端口诊断，不输出连接密钥，不重放分析请求。两个回归先红后绿，覆盖恢复、清理顺序、三次上限和其他错误不重试。
+- 原 fileParallelism:false 仅约束 kernel project 内文件，不能阻止 Node/UI project 同时运行。使用 sequence.groupOrder:1 让真实内核组等 Node/UI 完成后再串行执行，未增加超时或跳过用例。最终 verbose 日志确认全部 Node/UI 结果均先于真实内核结果；此配置行为见 [Vitest 官方项目顺序说明](https://vitest.dev/config/sequence#sequence-grouporder)。
+
+保留失败证据：首批合并后整轮为 551 文件通过、2 文件失败，其中 PTY 1 条失败、内核 outputs 初始化出现 Duplicate Signature；当时另有 DAWN 测试运行。中间真实内核轮出现两个超时并主动中止；握手补修后的一个整轮有 R 签名错误；随后独立 outputs 轮明确得到端口占用。没有把所有超时武断归为同一原因，也没有关闭 HMAC 校验或重试未知错误。上述日志保留在 /tmp/ecoai-fixes-final/，最终结果以本节的后续完整验收为准。
+
+追加源码的完整验证：
+
+- npm test -- --reporter=verbose：554 文件全部通过，5823 通过、10 条解释器环境条件跳过，137.47 秒；包含全部 47 条真实内核测试。条件分支已在首批修复的 73 条补测中覆盖。
+- npm run typecheck、npm run build：均通过。
+- MCP/回退/更新等首批修复已在此前完整普通 Electron 899 通过与 1 条历史取舍跳过、真实内核 6/6 的完整入口验证；追加内核代码后的专项 Electron 和隔离打包验收继续记录于下。
+
+最新日志：local-main-final-tests.log、local-main-final-build.log、local-main-final-pack.log；最小复现与先红后绿记录为 pty-readiness-probe.log、handshake-identity-red.log、launch-port-retry-red.log 和 launch-port-retry-green.log，均位于 /tmp/ecoai-fixes-final/。
+
+
+追加内核源码后的 Electron 专项：首次一轮 5 通过、R 一条在夹具的创建会话/重载阶段超时，未进入 R 执行；夹具原先忽略 createTask 的错误返回。已明确校验创建返回，失败时直接报告实际返回而不是继续等不存在的会话。R 单项复跑 1/1 通过，随后整组六条全部通过（26.5 秒），记录为 local-main-kernel-e2e-accepted.log。旧失败轮保存在 local-main-final-kernel-e2e.log，不将其记作通过，也不把未取得的 IPC 错误原因当作已证实结论。追加源码后的类型检查再次通过。
+
+隔离 macOS arm64 打包再次通过；已逐文件确认打包副本的全部 src、package.json 和锁文件与本次源码一致。打包版 CLI --help 与 7 项真实应用自测全部通过，日志为 local-main-final-packaged.log。没有替换已安装应用、发布或推送。
+
+最新追加源码的解释器条件补测也已重跑：4 文件、73 通过、3 条相反条件跳过（12.53 秒），覆盖默认全量轮的 10 条解释器条件分支；日志 local-main-final-conditionals.log。完整源码验证为 554 文件、5823 通过、10 条条件跳过，专项 Electron 内核 6/6，打包版 CLI 与 7 项自测通过。普通 Electron 的 899 通过与 1 条历史取舍跳过属于首批完整入口验证，追加内核修复后没有冒称又跑了一次整套普通 E2E。

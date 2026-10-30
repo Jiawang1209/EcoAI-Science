@@ -38,6 +38,7 @@
  *    而且判据是「内核还能不能算对一道题」，不是回复长什么样。
  */
 import { UserFacingError } from "../errors.js"
+import { randomUUID } from "node:crypto"
 import {
   argvForInterpreter,
   diagnoseInterpreter,
@@ -244,7 +245,7 @@ export function createKernelChannel(opts: KernelChannelOptions): KernelChannel &
   }
 
   /** 等一条以 `parentId` 为父的消息 */
-  const waitFor = (parentId: string, replyType: string, timeoutMs: number): Promise<TaggedMessage> =>
+  const waitFor = (parentId: string, replyType: string, timeoutMs: number, parents?: ReadonlySet<string>): Promise<TaggedMessage> =>
     new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         off()
@@ -253,7 +254,8 @@ export function createKernelChannel(opts: KernelChannelOptions): KernelChannel &
       }, timeoutMs)
       const off = on(replyType, (m) => {
         // **按 parent_header 配对，不按顺序**——并发请求时顺序会乱
-        if (m.message.parent_header?.msg_id !== parentId) return
+        const id = m.message.parent_header?.msg_id
+        if (id !== parentId && (!id || !parents?.has(id))) return
         clearTimeout(timer)
         off()
         resolve(m)
@@ -274,6 +276,7 @@ export function createKernelChannel(opts: KernelChannelOptions): KernelChannel &
 
   /** iopub 还没证明活着时那根重问的定时器。**关通道要清掉它** */
   let 重问iopub: ReturnType<typeof setInterval> | undefined
+  const handshakeIds = new Set([opts.handshake.header.msg_id])
 
   /**
    * **等 iopub 自己出过一声**，再认为握手完成（2026-09-09）。
@@ -310,18 +313,23 @@ export function createKernelChannel(opts: KernelChannelOptions): KernelChannel &
       })
       const offStatus = on("status", (m) => {
         if (完了) return
-        if (m.message.parent_header?.msg_id !== opts.handshake.header.msg_id) return
+        if (!handshakeIds.has(m.message.parent_header?.msg_id ?? "")) return
         收摊()
         resolve()
       })
       /**
-       * 重发的是**同一条** `kernel_info_request`（同一个 msg_id）。
-       * 内核会照常再回一次，而我们要的只是「iopub 上出现一条以它为父的消息」——
-       * 造一条新的就得把 `@nteract/messaging` 拖进这个文件，
-       * 而那正是 `makeExecute` 注入要躲开的事（见上面那段说明）。
+       * 重问必须用全新 msg_id：相同签名会被 Jupyter 的重放保护拒绝。
+       * 这里只重问无副作用的 kernel_info，不重发任何 execute_request。
        */
       重问iopub = setInterval(() => {
-        if (!完了) rawSend(opts.handshake)
+        if (!完了) {
+          const retry = {
+            ...opts.handshake,
+            header: { ...opts.handshake.header, msg_id: randomUUID(), date: new Date().toISOString() },
+          }
+          handshakeIds.add(retry.header.msg_id)
+          rawSend(retry)
+        }
       }, IOPUB_REPROBE_MS)
       const 闹钟 = setTimeout(() => {
         if (完了) return
@@ -351,7 +359,7 @@ export function createKernelChannel(opts: KernelChannelOptions): KernelChannel &
         const iopub活着 = 等iopub出过一声(timeoutMs)
         // **先兜一下**：shell 那边先失败时下面的 `await` 走不到，它就成了没人接的 rejection
         void iopub活着.catch(() => {})
-        const waiting = waitFor(opts.handshake.header.msg_id, "kernel_info_reply", timeoutMs)
+        const waiting = waitFor(opts.handshake.header.msg_id, "kernel_info_reply", timeoutMs, handshakeIds)
         rawSend(opts.handshake)
         await waiting
         await iopub活着
@@ -709,6 +717,7 @@ export function launchKernelChannel(opts: LaunchOptions): Promise<KernelChannel 
 }
 async function launchKernelChannelOnce(
   opts: LaunchOptions,
+  attempt = 1,
 ): Promise<KernelChannel & { ready(): Promise<void>; 连接信息: KernelConnectionInfo }> {
   /**
    * **重依赖只在真要起内核时才加载。**
@@ -807,19 +816,33 @@ async function launchKernelChannelOnce(
     stdoutTail = (stdoutTail + d).slice(-STDERR_TAIL)
   })
 
-  return attachKernelChannel({
-    连接信息: kernel.config as KernelConnectionInfo,
-    process: kernel.spawn,
-    language,
-    label,
-    // **本机路径的实例 id 前缀是 kernelspec 名，不是语言名**——拆出 attachKernelChannel 之前就是这样
-    instanceLabel: byPath ? byPath.language : (opts.kernelName ?? "kernel"),
-    ...(opts.runIdOf ? { runIdOf: opts.runIdOf } : {}),
-    ...(opts.handshakeTimeoutMs ? { handshakeTimeoutMs: opts.handshakeTimeoutMs } : {}),
-    diagnose,
-    // **握手超时的真正原因往往在 stderr 里**，只报「超时」等于把线索扔了
-    evidence: () => stderrTail || stdoutTail,
-  })
+  try {
+    return await attachKernelChannel({
+      连接信息: kernel.config as KernelConnectionInfo,
+      process: kernel.spawn,
+      language,
+      label,
+      // **本机路径的实例 id 前缀是 kernelspec 名，不是语言名**——拆出 attachKernelChannel 之前就是这样
+      instanceLabel: byPath ? byPath.language : (opts.kernelName ?? "kernel"),
+      ...(opts.runIdOf ? { runIdOf: opts.runIdOf } : {}),
+      ...(opts.handshakeTimeoutMs ? { handshakeTimeoutMs: opts.handshakeTimeoutMs } : {}),
+      diagnose,
+      // **握手超时的真正原因往往在 stderr 里**，只报「超时」等于把线索扔了
+      evidence: () => stderrTail || stdoutTail,
+    })
+  } catch (err) {
+    // Ports are probed before the child binds; another process can take them.
+    // attachKernelChannel has closed the failed child and sockets. Only retry
+    // startup on an explicit bind collision, before any analysis can execute.
+    if (!/R_zmq_bind[\s\S]*Address already in use|zmq\.error\.ZMQError:[^\n]*Address already in use/i.test(`${stderrTail}\n${stdoutTail}`)) throw err
+    const info = kernel.config as KernelConnectionInfo
+    const ports = (["shell_port", "iopub_port", "stdin_port", "control_port", "hb_port"] as const)
+      .map(name => `${name}=${info[name]}`).join(", ")
+    const diagnostic = `内核启动端口冲突：尝试${attempt}/3，PID=${kernel.spawn.pid ?? "未知"}，${ports}`
+    if (attempt >= 3) throw new UserFacingError(`${diagnostic}；已停止失败实例，共尝试3次，未执行分析代码。`)
+    console.warn(`${diagnostic}；已停止失败实例，重新分配端口启动。`)
+    return launchKernelChannelOnce(opts, attempt + 1)
+  }
 }
 
 const message = (err: unknown): string => (err instanceof Error ? err.message : String(err))

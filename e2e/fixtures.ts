@@ -82,7 +82,8 @@ export async function 开一段临时会话(page: Page, 首句?: string): Promis
     const p = (await w.dawn.invoke("getProviders", {})) as { data?: { agents?: { agentId: string }[] } }
     const agentId = p.data?.agents?.[0]?.agentId
     if (!agentId) return false
-    await w.dawn.invoke("createTask", { agentId })
+    const created = await w.dawn.invoke("createTask", { agentId })
+    if (!created.data) throw new Error(`createTask 未成功：${JSON.stringify(created)}`)
     return true
   })
   if (!建好了) throw new Error("夹具里一个 agent 都没有——`开一段临时会话` 建不出会话")

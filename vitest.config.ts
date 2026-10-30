@@ -39,6 +39,8 @@ export default defineConfig({
           name: "kernel",
           environment: "node",
           include: ["tests/kernel/*.integration.test.ts"],
+          // 文件串行只约束本 project；真实内核还必须等 node/ui 全部结束。
+          sequence: { groupOrder: 1 },
           fileParallelism: false,
         },
       },

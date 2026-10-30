@@ -13,10 +13,12 @@ async function setup() {
   const runtime = new PtyRuntime({ command: '/bin/bash', args: ['--noprofile', '--norc'], terminalControl: control })
   await runtime.start({ sessionId: 't', workspace, sessionDir: join(workspace, '.dawn') })
   cleanups.push(async () => { await runtime.stop('t'); control.dispose(); rmSync(workspace, { force: true, recursive: true }) })
-  const prompt = async (pattern: RegExp) => {
+  const prompt = async (pattern: RegExp, readyOutput?: string) => {
     await vi.waitFor(async () => {
       control.grant('chat', 't', 'shell')
       const snapshot = await control.snapshot('chat', 't')
+      // A prompt from before the write is not evidence that the new command finished.
+      if (readyOutput) expect(snapshot.text.split('\n')).toContain(readyOutput)
       expect(snapshot.cursorLine).toMatch(pattern)
     }, { timeout: 5000 })
   }
@@ -28,8 +30,8 @@ describe('same real PTY process', () => {
   it('reads the live Shell directory after cd instead of reporting its startup directory', async () => {
     const x = await setup()
     x.control.reclaim('t')
-    x.runtime.write('t', 'mkdir nested; cd nested\r')
-    await x.prompt(/[$#] ?$/)
+    x.runtime.write('t', 'mkdir nested; cd nested; echo CWD_READY\r')
+    await x.prompt(/[$#] ?$/, 'CWD_READY')
     expect(await x.control.currentDirectory('t')).toBe(realpathSync(join(x.workspace, 'nested')))
   })
   it('keeps the human cwd, environment and shell PID across an AI handoff', async () => {
@@ -37,7 +39,7 @@ describe('same real PTY process', () => {
     const initialPid = x.control.state('t').pid
     x.control.reclaim('t')
     x.runtime.write('t', 'export DAWN_TERMINAL_SAMPLE=41; mkdir nested; cd nested; echo HUMAN_READY\r')
-    await x.prompt(/[$#] ?$/)
+    await x.prompt(/[$#] ?$/, 'HUMAN_READY')
     await x.control.execute('chat', 't', 'printf "%s|%s|%s" "$DAWN_TERMINAL_SAMPLE" "$PWD" "$$" > ../proof.txt', async () => {})
     const result = await x.control.wait('chat', 't', 3000)
     expect(result.task).toMatchObject({ state: 'completed', exitCode: 0 })
@@ -53,8 +55,8 @@ describe('same real PTY process', () => {
     x.control.reclaim('t')
     x.runtime.write('t', 'python3 -q\r')
     await x.prompt(/>>> ?$/)
-    x.runtime.write('t', 'dawn_number = 40\r')
-    await x.prompt(/>>> ?$/)
+    x.runtime.write('t', 'dawn_number = 40; print("PYTHON_READY")\r')
+    await x.prompt(/>>> ?$/, 'PYTHON_READY')
     x.control.grant('chat', 't', 'python')
     await x.control.execute('chat', 't', 'dawn_number += 2\nopen("python-result.txt", "w").write(str(dawn_number))', async () => {})
     expect((await x.control.wait('chat', 't', 3000)).task).toMatchObject({ state: 'completed', exitCode: 0 })
@@ -69,8 +71,8 @@ describe('same real PTY process', () => {
     x.control.reclaim('t')
     x.runtime.write('t', '/Library/Frameworks/R.framework/Resources/bin/R --vanilla --quiet\r')
     await x.prompt(/^> ?$/)
-    x.runtime.write('t', 'dawn_number <- 40\r')
-    await x.prompt(/^> ?$/)
+    x.runtime.write('t', 'dawn_number <- 40; cat("R_READY\\n")\r')
+    await x.prompt(/^> ?$/, 'R_READY')
     x.control.grant('chat', 't', 'R')
     await x.control.execute('chat', 't', 'dawn_number <- dawn_number + 2; writeLines(as.character(dawn_number), "r-result.txt")', async () => {})
     expect((await x.control.wait('chat', 't', 3000)).task).toMatchObject({ state: 'completed', exitCode: 0 })
