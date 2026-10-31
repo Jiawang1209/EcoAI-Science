@@ -138,7 +138,7 @@ import { ContentSearchResults, type 搜到的一段, type 搜到的一处 } from
 import { 拆词, type 跳转目标 } from "../protocol/search-match.js"
 import { $kernels, setKernels as setKernelsAtom, setQueued } from "./state/transcript.js"
 import { NotebookPanel, type 语言 as 内核语言 } from "./notebook.js"
-import { SetupWizard, 读跳过, 记跳过, 读引导完成, 记引导完成, type 探测结果 } from "./setup-wizard.js"
+import { SetupWizard, 读跳过, 记跳过, 记引导完成, type 探测结果 } from "./setup-wizard.js"
 import { 对话agent顺序 } from "./agent-order.js"
 import { MemoryPanel } from "./memory-panel.js"
 import { buildCommands, type Actions } from "./commands.js"
@@ -1082,7 +1082,6 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
    * 全新安装的机器上向导从来没亮过。
    */
   const [跳过向导, 设跳过向导] = useState(读跳过)
-  const [向导起点, 设向导起点] = useState<"welcome" | "key">(() => 读引导完成() ? "key" : "welcome")
   /**
    * 向导一旦因「没凭证」亮起，就留到人按「开始使用」或「先跳过」——key 保存成功那一瞬不能把它抽走
    * （e2e 抓的：第 ② 段解释器还没来得及选，屏幕就换了）。
@@ -1093,7 +1092,7 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
   const 启动待核验 = !目录到手 || !凭证到手 || creds.verified === false
   const 显示向导 = !跳过向导 && (向导中 || 启动待核验 || 没有钥匙)
   const 打开配置向导 = () => {
-    设向导起点("welcome"); 设向导中(true)
+    设向导中(true)
     记跳过(false); 设跳过向导(false)
     setActiveSessionId(undefined); setView("conversation")
     setDockOpen(false); 关掉设置()
@@ -5765,8 +5764,6 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
             </>
           ) : 显示向导 ? (
             <SetupWizard
-              key={向导起点}
-              initialStep={向导起点}
               providers={knownProviders.providers}
               configured={creds.verified === false ? [] : creds.configured}
               modelCatalog={knownProviders.models}

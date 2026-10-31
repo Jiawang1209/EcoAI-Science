@@ -14,3 +14,11 @@
 - 类型检查、完整构建通过。
 - 真实 Electron：4 文件、18/18 通过，44.6 秒；新增用例使用隔离用户目录和真实 CredentialStore，冷启动直接观测 configured:[deepseek]、verified:false，此时四步引导可见且工作台标题不在场；mock keychain 核验虚构密文失败后，仍显示引导及原有原因。已查看等待核验时的窗口截图。没有操作真实系统密码框或真实凭证。
 - 日志：/tmp/ecoai-keychain-backdrop-red.log、green.log、ui.log、electron.log、final-typecheck.log、build.log（完整文件名前缀均为 ecoai-keychain-backdrop-）。
+
+## 自动引导的起点修正
+
+用户进一步确认：系统密码框背后应是四步引导的第一步，不能因为历史 onboardingDone 标记跳到第三步的 API Key 表单。App 移除按该标记选择起点的逻辑，自动显示和手动重新打开都使用向导默认的欢迎页；主动跳过仍保持有效，完成标记及凭证数据保留。组件内正常的下一页、上一步及表单草稿不受影响。
+
+回归覆盖历史完成标记存在时的凭证待核验成功/失败、凭证缺失，以及主动点击两次下一页后进入 API Key 页面。Electron 加密凭证冷启动也预置历史完成标记，要求首屏仍是欢迎页。
+
+验证结果：旧代码 3 条回归失败，修复后全量 UI 187 文件、1791 项通过；Electron 4 文件、18 项通过，已检查历史完成标记下的欢迎页截图；类型检查、完整构建、差异空白检查通过。日志前缀 /tmp/ecoai-welcome-start-。系统真实钥匙串授权仍由用户操作。

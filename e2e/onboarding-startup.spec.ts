@@ -40,6 +40,8 @@ test.describe('已有加密凭证的冷启动', () => {
     writeFileSync(join(profile, 'credentials.json'), JSON.stringify({
       encrypted: true, entries: { deepseek: Buffer.from('SYNTHETIC_INVALID_CIPHERTEXT').toString('base64') },
     }), { mode: 0o600 })
+    // A previous completion must not turn the keychain backdrop into step 3.
+    await dawn.page.evaluate(() => localStorage.setItem('dawn.global.onboardingDone', '1'))
     const page = await dawn.重开()
     const credentials = () => page.evaluate(async () => {
       const w = window as unknown as { dawn: { invoke: (operation: string, request: unknown) => Promise<{ data?: { configured: string[]; verified?: boolean; broken?: string[] } }> } }

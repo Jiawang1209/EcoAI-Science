@@ -4,7 +4,7 @@ import { App } from '../../src/ui/App.js'
 import { createClient } from '../../src/ui/client.js'
 import { OPERATIONS, WORKBENCH_PROTOCOL_VERSION, type SessionSummary } from '../../src/protocol/index.js'
 import { $credentialsLoaded, $providersLoaded, $activeSessionId, $dockOpen, $tempSessions, setActiveSessionId, setDockOpen, setCredentials } from '../../src/ui/state/index.js'
-import { 记跳过 } from '../../src/ui/setup-wizard.js'
+import { 记引导完成, 记跳过 } from '../../src/ui/setup-wizard.js'
 
 vi.mock('../../src/ui/terminal.js', () => ({ TerminalPane: () => <div /> }))
 beforeEach(() => { localStorage.clear(); 记跳过(false) })
@@ -107,7 +107,8 @@ it('从已有会话及终端面板重新打开向导，不被当前视图挡住�
 })
 
 
-it.each(['unlocked', 'unreadable'] as const)('已保存但未核验的加密凭证在系统密码框后保持四步引导，核验结果为 %s', async result => {
+it.each(['unlocked', 'unreadable'] as const)('曾完成引导的用户在凭证待核验时仍从第一步开始，核验结果为 %s', async result => {
+  记引导完成()
   const h = harness()
   render(<App client={h.client} />)
   await act(async () => {
@@ -129,4 +130,22 @@ it.each(['unlocked', 'unreadable'] as const)('已保存但未核验的加密凭�
     fireEvent.click(screen.getByRole('button', { name: '下一页' }))
     expect(screen.getByText(/上一版保存的 key 解不开了/)).toBeTruthy()
   }
+})
+
+it('曾完成引导但缺少凭证时从欢迎页开始，主动下一页才进入功能和 API Key 页', async () => {
+  记引导完成()
+  const h = harness()
+  render(<App client={h.client} />)
+  await act(async () => {
+    h.providers.resolve(empty)
+    h.credentials.resolve({ configured: [], encrypted: true, verified: true })
+  })
+  expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: '下一页' }))
+  expect(screen.queryByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeNull()
+  expect(screen.getByRole('heading', { name: '科研对话' })).toBeTruthy()
+  expect(screen.queryByLabelText('API key')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: '下一页' }))
+  expect(screen.getByRole('button', { name: /^保存$/ })).toBeTruthy()
+  expect(screen.getByLabelText('API key')).toBeTruthy()
 })
