@@ -244,6 +244,10 @@ export function AgentMarkdown({
             parseIncompleteMarkdown
             // 动效会跟流式更新抢帧；DESIGN.md：动效跟随状态，永不延迟状态
             animated={false}
+            // Streamdown 2.7 caps block heights inline, but its Tailwind overflow
+            // utilities are not loaded here. Keep blocks in transcript flow.
+            codeBlockMaxHeight={0}
+            tableMaxHeight={0}
             components={components}
             {...(remarkPlugins ? { remarkPlugins } : {})}
             plugins={MARKDOWN_PLUGINS}

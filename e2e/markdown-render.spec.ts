@@ -71,8 +71,19 @@ test("长代码滚动时**语言标题与复制操作仍钉在视口上沿**", a
   const actions = codeBlock.locator('[data-streamdown="code-block-actions"]')
   const scroll = page.locator('.turns > div').first()
   // 向上滚轮是退出自动贴底的真实用户动作；程序设 scrollTop 不代替这个前提。
+  // Highlighting can finish while smooth auto-follow is still moving. Measure
+  // the wheel gesture only after the transcript has actually reached bottom.
+  await expect.poll(() => scroll.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop)).toBeLessThan(2)
   const viewport = (await scroll.boundingBox())!
-  await page.mouse.move(viewport.x + viewport.width / 2, viewport.y + viewport.height / 2)
+  // Target the transcript gutter. Over the code, its horizontal scroll
+  // container can receive the wheel and the transcript never exits auto-follow.
+  const wheelPoint = { x: viewport.x + 24, y: viewport.y + viewport.height / 2 }
+  expect(await scroll.evaluate((el, point) => {
+    let target = document.elementFromPoint(point.x, point.y)
+    while (target && !['auto', 'scroll'].includes(getComputedStyle(target).overflow)) target = target.parentElement
+    return target === el
+  }, wheelPoint)).toBe(true)
+  await page.mouse.move(wheelPoint.x, wheelPoint.y)
   const atBottom = await scroll.evaluate(el => el.scrollTop)
   await page.mouse.wheel(0, -240)
   await expect.poll(() => scroll.evaluate(el => el.scrollTop)).toBeLessThan(atBottom)
