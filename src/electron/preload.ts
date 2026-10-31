@@ -27,6 +27,8 @@ const WEB_CONTROL = "dawn:web:control"
 const WEB_STATE = "dawn:web:state"
 
 contextBridge.exposeInMainWorld("dawn", {
+  /** Available before the renderer's first frame; never waits for credentials or IPC. */
+  installationId: process.argv.find(arg => arg.startsWith('--ecoai-installation-id='))?.slice('--ecoai-installation-id='.length),
   invoke: (operation: string, request: unknown, requestId?: string) =>
     ipcRenderer.invoke(CHANNEL, operation, request, requestId),
 

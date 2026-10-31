@@ -16,17 +16,23 @@ import rpIcon from "../../packaging/icon.svg"
 
 export const 跳过键 = "dawn.global.setupSkipped"
 
+// 打包后的完成状态只属于当前安装；旧版全局记录保留，但不能跳过新安装的介绍。
+function 本次安装键(key: string): string {
+  const id = window.dawn?.installationId
+  return id ? `${key}.${id}` : key
+}
+
 export function 读跳过(): boolean {
   try {
-    return localStorage.getItem(跳过键) === "1"
+    return localStorage.getItem(本次安装键(跳过键)) === "1"
   } catch {
     return false
   }
 }
 export function 记跳过(v: boolean): void {
   try {
-    if (v) localStorage.setItem(跳过键, "1")
-    else localStorage.removeItem(跳过键)
+    if (v) localStorage.setItem(本次安装键(跳过键), "1")
+    else localStorage.removeItem(本次安装键(跳过键))
   } catch {
     /* 存不进去就算了：下次打开再见一次向导，不算错 */
   }
@@ -37,14 +43,14 @@ const 引导完成键 = "dawn.global.onboardingDone"
 /** 兼容旧版本已完成或主动跳过首次设置的用户。 */
 export function 读引导完成(): boolean {
   try {
-    return localStorage.getItem(引导完成键) === "1" || 读跳过()
+    return localStorage.getItem(本次安装键(引导完成键)) === "1" || 读跳过()
   } catch {
     return false
   }
 }
 export function 记引导完成(): void {
   try {
-    localStorage.setItem(引导完成键, "1")
+    localStorage.setItem(本次安装键(引导完成键), "1")
   } catch {
     // 存储不可用时仍可完成当前流程。
   }

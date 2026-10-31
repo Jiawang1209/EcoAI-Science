@@ -160,6 +160,8 @@ export interface CreateWorkbenchOptions {
      * 它手里才有 `CredentialStore` 与钥匙串。
      */
     交接?: (到版本: string) => void
+    /** Preserve only the onboarding scope after an actual successful package replacement. */
+    保留引导?: () => void
     /** 更新出事时记一行（主进程写进 `startup.log`） */
     记?: (话: string) => void
   }
@@ -1327,6 +1329,7 @@ export function createWorkbench(opts: CreateWorkbenchOptions): Workbench {
         : opts.更新.重启
           ? 本机安装器({
               下载目录,
+              ...(opts.更新.保留引导 ? { 已安装: opts.更新.保留引导 } : {}),
               // **这一行漏过一次**：漏了它，真机上点「重启并更新」什么都不会发生
               ...(opts.更新.应用路径 ? { 应用路径: opts.更新.应用路径 } : {}),
               重启: opts.更新.重启,

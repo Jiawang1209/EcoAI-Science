@@ -52,6 +52,7 @@ win:
 portable:
   artifactName: EcoAI-Science-${version}-${os}-${arch}-portable.${ext}
 nsis:
+  include: packaging/installer.nsh
   installerIcon: packaging/icon.ico
   uninstallerIcon: packaging/icon.ico
   oneClick: false

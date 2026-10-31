@@ -1076,30 +1076,21 @@ export function App({ client: injected }: { client?: WorkbenchClient }) {
   }, [client])
   useEffect(() => { if (ready) refreshInterpreters() }, [ready, refreshInterpreters])
   /**
-   * 首启向导（2026-08-27）：没有任何凭证、且没点过「先跳过」时替换主区。
-   * 判据与底部红字同一条（`没有钥匙`）：目录与凭证**都回来了**且没有凭证。
-   * 2026-08-28 之前这里看的是 `providers.providers.length > 0`——那个列表在发布出去的默认配置下永远为空，
-   * 全新安装的机器上向导从来没亮过。
+   * 本次安装尚未明确完成或跳过时，首帧就显示四步引导。
+   * 系统能恢复旧凭证不等于用户已看过这次安装的引导。
    */
   const [跳过向导, 设跳过向导] = useState(读跳过)
   /**
-   * 向导一旦因「没凭证」亮起，就留到人按「开始使用」或「先跳过」——key 保存成功那一瞬不能把它抽走
-   * （e2e 抓的：第 ② 段解释器还没来得及选，屏幕就换了）。
+   * 保持到明确完成或跳过。解锁钥匙串、保存 key 和目录刷新都不能自动关掉它。
    */
-  const [向导中, 设向导中] = useState(false)
-  // 首帧先画引导，钥匙串的同步系统密码框出现时不能把工作台留在背后。
-  // configured 在核验前只是存盘提示，verified:false 不能视为已经可用。
-  const 启动待核验 = !目录到手 || !凭证到手 || creds.verified === false
-  const 显示向导 = !跳过向导 && (向导中 || 启动待核验 || 没有钥匙)
+  const [向导中, 设向导中] = useState(() => !读跳过())
+  const 显示向导 = !跳过向导 && 向导中
   const 打开配置向导 = () => {
     设向导中(true)
     记跳过(false); 设跳过向导(false)
     setActiveSessionId(undefined); setView("conversation")
     setDockOpen(false); 关掉设置()
   }
-  useEffect(() => {
-    if (没有钥匙 && !跳过向导) 设向导中(true)
-  }, [没有钥匙, 跳过向导])
   const 探测解释器 = useCallback(() => client.get<探测结果>("probeInterpreters", {}), [client])
   const 存解释器 = useCallback(async (language: "python" | "R", path: string) => {
     const r = await client.get<{ python?: string; r?: string; problem?: string }>("setInterpreter", { language, path })

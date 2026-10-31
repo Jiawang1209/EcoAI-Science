@@ -40,6 +40,7 @@ export type EventSource = (cb: (raw: unknown) => void) => () => void
 declare global {
   interface Window {
     dawn?: {
+      readonly installationId?: string | undefined
       invoke(operation: string, request: unknown, requestId?: string): Promise<RawResponse>
       onEvent?: EventSource
       onTrayNewTask?: (cb: () => void) => () => void

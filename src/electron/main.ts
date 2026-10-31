@@ -27,6 +27,9 @@ import { 托盘图标 } from "./tray-icon.js"
 import { CHILD_ENTRY } from "../subagent/protocol.js"
 import { acquireDatabaseInstance } from "./single-instance.js"
 import { applyProductIdentity } from "./product-identity.js"
+import { getInstallationId } from "./installation-id.js"
+import { randomUUID } from "node:crypto"
+import { installationOnboardingScope, preserveUpdatedOnboarding } from "./onboarding-installation-state.js"
 
 const showProductName = applyProductIdentity(app)
 
@@ -268,8 +271,34 @@ function 创建托盘(): void {
   })
 }
 
+let onboardingInstallationId: string | undefined
+const onboardingStateFile = join(app.getPath("userData"), "onboarding-installation.json")
+function installedFilesId(): string {
+  return getInstallationId({
+    platform: process.platform, executablePath: app.getPath("exe"),
+    entryPath: fileURLToPath(import.meta.url), resourcesPath: process.resourcesPath,
+    portablePath: process.platform === "win32" ? process.env.PORTABLE_EXECUTABLE_FILE : process.platform === "linux" ? process.env.APPIMAGE : undefined,
+  })
+}
+function installationIdForWindow(): string | undefined {
+  if (!app.isPackaged) {
+    const testId = process.env.DAWN_ONBOARDING_INSTALLATION_ID
+    return testId && /^[a-zA-Z0-9-]{1,128}$/.test(testId) ? testId : undefined
+  }
+  if (!onboardingInstallationId) {
+    try {
+      onboardingInstallationId = installationOnboardingScope(onboardingStateFile, installedFilesId())
+    } catch {
+      启动日志("安装身份读取失败，本次先显示首次引导")
+      onboardingInstallationId = randomUUID()
+    }
+  }
+  return onboardingInstallationId
+}
+
 function createWindow(): void {
   启动日志("开窗口")
+  const installationId = installationIdForWindow()
   const win = new BrowserWindow({
     width: 1280,
     height: 840,
@@ -291,6 +320,7 @@ function createWindow(): void {
     // 窗口标题栏留给 Rho 那种自绘顶栏（46px），但 ①-B 先用系统标题栏，不做无谓的自绘
     webPreferences: {
       preload: join(import.meta.dirname, "preload.cjs"),
+      additionalArguments: installationId ? [`--ecoai-installation-id=${installationId}`] : [],
       // 渲染进程不给 node 能力：它只经 IPC 的单一入口取数（AgentDeck 的「不靠开洞」）
       nodeIntegration: false,
       contextIsolation: true,
@@ -825,6 +855,13 @@ app.whenReady().then(() => {
         状态文件: join(app.getPath("userData"), "update.json"),
         下载目录: join(app.getPath("userData"), "update"),
         记: (话) => 启动日志(`更新：${话}`),
+        保留引导: () => {
+          if (!app.isPackaged || !onboardingInstallationId) return
+          try {
+            // Read the newly installed files, rather than the cached pre-update fingerprint.
+            preserveUpdatedOnboarding(onboardingStateFile, onboardingInstallationId, installedFilesId())
+          } catch { 启动日志("更新完成，但引导状态交接未保存，下次启动会重新显示引导") }
+        },
         /**
          * 换包前把凭证交给下一版（规格 U5）。**这是最后一个还解得开的瞬间。**
          */

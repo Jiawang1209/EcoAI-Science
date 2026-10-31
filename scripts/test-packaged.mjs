@@ -103,7 +103,8 @@ try {
   const page = await app.firstWindow()
   await page.addInitScript(() => {
     localStorage.setItem("dawn.global.lang", "zh")
-    localStorage.setItem("dawn.global.setupSkipped", "1")
+    const id = window.dawn?.installationId
+    localStorage.setItem(`dawn.global.setupSkipped${id ? `.${id}` : ''}`, "1")
   })
   await page.reload()
   await 查("窗口起来、数据库开了（better-sqlite3）", () => page.locator(".app-shell").waitFor({ timeout: 60_000 }))

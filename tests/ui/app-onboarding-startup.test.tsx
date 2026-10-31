@@ -73,15 +73,18 @@ it.each(['providers', 'credentials'] as const)('两份启动数据均已到手�
   expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
 })
 
-it('已配置的用户在慢启动后直接回到首页，不误进向导', async () => {
+it('新安装即使恢复已有凭证也保留欢迎页，主动走完四步才进入首页', async () => {
   const h = harness()
   const { container } = render(<App client={h.client} />)
   await waitFor(() => expect(h.calls).toContain('getProviders'))
   await act(async () => h.credentials.resolve({ configured: ['deepseek'], encrypted: true }))
   expect(container.textContent).not.toMatch(oldEmptyCopy)
   await act(async () => h.providers.resolve({ agents: [{ agentId: 'chat', kind: 'native', provider: 'deepseek', model: 'deepseek-flash' }], providers: [{ providerId: 'deepseek', models: ['deepseek-flash'] }] }))
+  expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
+  for (let step = 0; step < 3; step++) fireEvent.click(screen.getByRole('button', { name: '下一页' }))
+  expect(screen.getByRole('heading', { name: '连接你的计算环境' })).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: '跳过，进入工作台' }))
   expect(screen.getByRole('heading', { name: '今天想分析什么？' })).toBeTruthy()
-  expect(screen.queryByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeNull()
 })
 
 
@@ -122,8 +125,8 @@ it.each(['unlocked', 'unreadable'] as const)('曾完成引导的用户在凭证�
     ? { configured: ['deepseek'], encrypted: true, verified: true }
     : { configured: [], encrypted: false, verified: true, broken: ['deepseek'] }))
   if (result === 'unlocked') {
-    expect(screen.getByRole('heading', { name: '今天想分析什么？' })).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: '今天想分析什么？' })).toBeNull()
+    expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
   } else {
     expect(screen.getByRole('heading', { name: '欢迎使用 EcoAI-Science' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '下一页' }))

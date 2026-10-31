@@ -6,7 +6,7 @@
  * 三个平台的分支都在这里验；**mac 那条今天在真包上走过一遍**（2026-09-06 探针），
  * win 与 Linux 只有单测，规格 §不做 里明说了「未在真机验过」。
  */
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { 换包 } from "../../src/update/换包.js"
 import type { 换包依赖 } from "../../src/update/换包.js"
 
@@ -86,7 +86,7 @@ describe("windows", () => {
       { 方式: "win-nsis", 包路径: "C:\\dl\\DAWN.exe", 期望版本: "0.0.3", 当前版本: "0.0.2" },
       依赖,
     )
-    expect(账.some((l) => l === "运行 C:\\dl\\DAWN.exe /S")).toBe(true)
+    expect(账.some((l) => l === "运行 C:\\dl\\DAWN.exe /S --updated")).toBe(true)
   })
 })
 
@@ -118,11 +118,31 @@ describe("AppImage", () => {
  * **安装器自己知道这个 app 在哪儿**，没有就说清楚。
  */
 describe("应用路径归安装器管", () => {
+  afterEach(() => vi.restoreAllMocks())
   it("本机安装器没拿到应用路径时，mac 那条说得出是这件事", async () => {
     const { 本机安装器 } = await import("../../src/update/本机安装器.js")
     const 装 = 本机安装器({ 下载目录: "/tmp", 重启: () => {} })
     await expect(
       装.换包({ 方式: "mac-zip", 包路径: "/tmp/x.zip", 期望版本: "0.0.3", 当前版本: "0.0.2" }),
     ).rejects.toThrow(/不知道这个应用装在哪儿/)
+  })
+
+  it.each([true, false])('只在真实换包成功后交接引导状态，成功=%s', async success => {
+    const { 本机安装器, 本机换包依赖 } = await import('../../src/update/本机安装器.js')
+    const events: string[] = []
+    vi.spyOn(本机换包依赖, '拷贝').mockImplementation(async () => {
+      events.push('replace')
+      if (!success) throw new Error('test replacement failure')
+    })
+    vi.spyOn(本机换包依赖, 'chmod').mockImplementation(async () => { events.push('chmod') })
+    const installer = 本机安装器({ 下载目录: '/test', 应用路径: '/test/app', 重启: () => {}, 已安装: () => { events.push('preserve') } })
+    const update = installer.换包({ 方式: 'appimage', 包路径: '/test/new', 期望版本: '2', 当前版本: '1' })
+    if (success) {
+      await update
+      expect(events).toEqual(['replace', 'chmod', 'preserve'])
+    } else {
+      await expect(update).rejects.toThrow('test replacement failure')
+      expect(events).toEqual(['replace'])
+    }
   })
 })

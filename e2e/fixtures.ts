@@ -289,7 +289,7 @@ export interface DawnFixture {
    * **会话续接只有这样才验得了**：在同一个进程里点来点去，
    * 永远碰不到「agent 没了、对话只在内存里」那一刻。
    */
-  重开: () => Promise<Page>
+  重开: (installationId?: string) => Promise<Page>
   /**
    * 假推理服务器的地址。
    *
@@ -707,6 +707,7 @@ export const test = base.extend<{ dawnOptions: DawnOptions; dawn: DawnFixture }>
      * ——那句话只有真重启一次才验得了。参数一个字都不能变，
      * 否则重开的就是另一个应用（另一个库、另一份配置）。
      */
+    let installationOverride: string | undefined
     const 起一次 = () => _electron.launch({
       args: [
         join(ROOT, "dist", "electron", "main.js"),
@@ -746,6 +747,7 @@ export const test = base.extend<{ dawnOptions: DawnOptions; dawn: DawnFixture }>
          * 开发机真实的配置与数据库。
          */
         ...(dawnOptions.env ?? {}),
+        ...(installationOverride ? { DAWN_ONBOARDING_INSTALLATION_ID: installationOverride } : {}),
         // **不写 DAWN_CONFIG 指向已有文件**：第一次启动应当自己写出默认配置。
         // 这条路径正是「装好了打不开」那个缺陷的所在，必须被真的走一遍
         DAWN_CONFIG: configPath,
@@ -878,7 +880,8 @@ export const test = base.extend<{ dawnOptions: DawnOptions; dawn: DawnFixture }>
         try {
           localStorage.setItem("dawn.global.lang", "zh")
           // 首启向导默认按「已跳过」（理由见 `showSetup` 的注释）
-          if (!showSetup) localStorage.setItem("dawn.global.setupSkipped", "1")
+          const id = window.dawn?.installationId
+          if (!showSetup) localStorage.setItem(`dawn.global.setupSkipped${id ? `.${id}` : ''}`, "1")
         } catch {
           /* 存不进去就算了：那时整个应用都会退回默认，用例自然会红 */
         }
@@ -896,8 +899,9 @@ export const test = base.extend<{ dawnOptions: DawnOptions; dawn: DawnFixture }>
      * *「之前聊过的，也无法连续上」*这句话，只有真重启一次才验得了：
      * 在同一个进程里点来点去，永远碰不到「agent 没了、对话只在内存里」那一刻。
      */
-    const 重开 = async (): Promise<Page> => {
+    const 重开 = async (installationId?: string): Promise<Page> => {
       await app.close().catch(() => {})
+      if (installationId !== undefined) installationOverride = installationId
       app = await 起一次()
       app.process().stderr?.on("data", (b: Buffer) => {
         const 文本 = b.toString().trimEnd()
